@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.paint.LinearGradient?>
+<?import javafx.scene.paint.Stop?>
+<?import javafx.scene.text.Font?>
+
+<ScrollPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: #b3b3b3;" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.sadgruppo11.PrimaryController">
+   <content>
+      <BorderPane prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: #0A3323;">
+         <left>
+            <VBox opacity="0.91" prefHeight="200.0" prefWidth="260.0" spacing="15.0" style="-fx-background-color: #0A3323;" BorderPane.alignment="CENTER">
+               <children>
+                  <ListView opacity="0.72" prefHeight="596.0" prefWidth="230.0" style="-fx-background-color: #105666;" VBox.vgrow="ALWAYS" />
+               </children></VBox>
+         </left>
+         <top>
+            <HBox prefHeight="59.0" prefWidth="1080.0" spacing="20.0" style="-fx-background-color: #0A3323;" BorderPane.alignment="CENTER">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label alignment="TOP_LEFT" prefHeight="78.0" prefWidth="286.0" text="MUSIC MANAGER">
+                     <font>
+                        <Font name="Verdana" size="27.0" />
+                     </font>
+                     <textFill>
+                        <LinearGradient endX="1.0" endY="1.0">
+                           <stops>
+                              <Stop>
+                                 <color>
+                                    <Color red="1.0" green="1.0" blue="1.0" />
+                                 </color>
+                              </Stop>
+                              <Stop offset="1.0">
+                                 <color>
+                                    <Color red="1.0" green="1.0" blue="1.0" />
+                                 </color>
+                              </Stop>
+                           </stops>
+                        </LinearGradient>
+                     </textFill>
+                     <opaqueInsets>
+                        <Insets bottom="150.0" left="150.0" right="150.0" top="150.0" />
+                     </opaqueInsets>
+                  </Label>
+                  <HBox alignment="TOP_CENTER" nodeOrientation="LEFT_TO_RIGHT" prefHeight="34.0" prefWidth="282.0" spacing="20.0">
+                     <children>
+                        <Button mnemonicParsing="false" opacity="0.8" style="-fx-background-color: #839958;" text="HOME" textFill="WHITE">
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin>
+                        </Button>
+                        <Button mnemonicParsing="false" opacity="0.85" style="-fx-background-color: #839958;" text="CONSIGLIATI" textFill="WHITE" />
+                        <Button alignment="TOP_CENTER" mnemonicParsing="false" opacity="0.85" style="-fx-background-color: #839958;" text="CATEGORIE" textFill="WHITE" HBox.hgrow="ALWAYS" />
+                     </children>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </HBox>
+                  <Button alignment="TOP_CENTER" mnemonicParsing="false" opacity="0.85" prefHeight="45.0" prefWidth="45.0" style="-fx-background-color: #839958; -fx-background-radius: 50;" text="🔍" textFill="WHITE" />
+                  <TextField prefHeight="26.0" prefWidth="284.0" style="-fx-border-color: #8399584;" />
+               </children></HBox>
+         </top>
+         <bottom>
+            <VBox prefHeight="49.0" prefWidth="1080.0" style="-fx-background-color: #0A3323;" BorderPane.alignment="BOTTOM_CENTER">
+               <children>
+                  <HBox prefHeight="14.0" prefWidth="1080.0">
+                     <children>
+                        <Label prefHeight="18.0" prefWidth="43.0" text="00:00" />
+                        <ProgressBar prefHeight="18.0" prefWidth="1043.0" progress="0.0" style="-fx-accent: #1DB954;" />
+                     </children>
+                  </HBox>
+                  <HBox alignment="BOTTOM_CENTER" prefHeight="30.0" prefWidth="1080.0" style="-fx-background-color: #0A3323;">
+                     <children>
+                        <Region layoutX="332.0" layoutY="10.0" prefHeight="46.0" prefWidth="404.0" />
+                        <Button layoutX="680.0" layoutY="10.0" mnemonicParsing="false" style="-fx-background-color: #105666;" text="🔀" />
+                        <Button mnemonicParsing="false" style="-fx-background-color: #105666;" text="⏮" />
+                        <Button mnemonicParsing="false" style="-fx-background-color: #105666;" text="▶" />
+                        <Button layoutX="708.0" layoutY="10.0" mnemonicParsing="false" style="-fx-background-color: #105666;" text="⏹" />
+                        <Button mnemonicParsing="false" style="-fx-background-color: #105666;" text="⏭" textAlignment="CENTER" />
+                        <Button mnemonicParsing="false" style="-fx-background-color: #105666;" text="🔁" />
+                        <Button mnemonicParsing="false" style="-fx-background-color: #105666;" text="🔊" />
+                        <Region prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+                        <Button layoutX="683.0" layoutY="10.0" minWidth="0.0" mnemonicParsing="false" prefHeight="38.0" prefWidth="38.0" style="-fx-background-color: #105666; -fx-background-radius: 50;" text="+" />
+                     </children>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </HBox>
+               </children>
+            </VBox>
+         </bottom>
+         <center>
+            <StackPane prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #105666;" BorderPane.alignment="CENTER">
+               <children>
+                  <GridPane>
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                  </GridPane>
+                  <GridPane>
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                  </GridPane>
+                  <GridPane>
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                  </GridPane>
+               </children>
+            </StackPane>
+         </center>
+      </BorderPane>
+   </content>
+</ScrollPane>
