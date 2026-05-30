@@ -1,6 +1,5 @@
 package com.progettosad.mediaplayergruppo11.controller;
 
-import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ListView;
@@ -8,23 +7,37 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import java.net.URL;
-import java.util.ResourceBundle;
+import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.stage.Stage;
+
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
-import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
+import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
+import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
+
+import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
+import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_DELETED_PREFIX;
+
+
+import java.net.URL;
+import java.util.ResourceBundle;
+
 
 /**
  * Controller della vista principale della libreria musicale.
  * Gestisce il caricamento e l'interazione con la lista delle playlist 
  * e la tabella dei brani suggeriti/in riproduzione.
- * * @author FabioGenito e irene
+ * * @author Fabio e irene
  */
 public class LibraryController implements Initializable, Observer{
 
@@ -50,8 +63,12 @@ public class LibraryController implements Initializable, Observer{
     @FXML
     private TableColumn<Track, String> colDurata;
     
+    
+    @FXML 
+    private Button addTrackButton;
+    
     public LibraryController() {
-        this.subject = new TrackManager();
+        this.subject = TrackManager.getInstance();
         this.subject.attach(this);
     }
     
@@ -79,7 +96,21 @@ public class LibraryController implements Initializable, Observer{
                     setStyle("-fx-alignment: CENTER;");
                 }
             }
-        });        
+        });    
+        
+        addTrackButton.setOnAction(event -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/progettosad/mediaplayergruppo11/InsertForm.fxml"));
+                Parent root = loader.load();
+                Scene insertScene = new Scene(root);
+                Stage stage = (Stage) addTrackButton.getScene().getWindow();
+                stage.setScene(insertScene);
+                stage.show();
+            } catch (Exception e) {
+                e.printStackTrace();
+                AlertUtils.show(Alert.AlertType.ERROR, "Errore di Navigazione", "Impossibile caricare la schermata di inserimento.");
+            }
+        });
         setupContextMenu();
     }
     
@@ -94,7 +125,7 @@ public class LibraryController implements Initializable, Observer{
         try {
             PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
         } catch(IllegalStateException e) {
-            showAlert(Alert.AlertType.WARNING, "Libreria Vuota", e.getMessage());
+            AlertUtils.show(Alert.AlertType.WARNING, "Libreria Vuota", e.getMessage());
         }
     }
     
@@ -151,35 +182,37 @@ public class LibraryController implements Initializable, Observer{
     /**
      * Implementazione del contratto Observer. 
      * Reagisce alle variazioni di stato notificate dal TrackManager, filtrando gli eventi 
-     * di eliminazione (DELETED_TRACK). L'aggiornamento della UI è racchiuso in Platform.runLater 
+     * di eliminazione. L'aggiornamento della UI è racchiuso in Platform.runLater 
      * per garantire la thread-safety con il thread grafico di JavaFX.
      */
     @Override
     public void update() {
         String stato = subject.getState();
-        if (stato != null && stato.startsWith("DELETED_TRACK_")) {
-            int deletedId = Integer.parseInt(stato.split("_")[2]);
-            Platform.runLater(() -> {
-                if (trackTableView != null) {
-                    trackTableView.getItems().removeIf(track -> track.getId() == deletedId);
-                    showAlert(Alert.AlertType.INFORMATION, "Notifica Observer", "traccia rimossa");
+        
+        if (stato != null) {
+            // Gestione Eliminazione
+            if (stato.startsWith(EVENT_TRACK_DELETED_PREFIX)) {
+                int deletedId = Integer.parseInt(stato.split("_")[2]);
+                Platform.runLater(() -> {
+                    if (trackTableView != null) {
+                        trackTableView.getItems().removeIf(track -> track.getId() == deletedId);
+                    }
+                });
+            }
+            
+            // T - 01/03: Gestione Inserimento in tempo reale
+            if (stato.equals(EVENT_TRACK_ADDED)) {
+                Track nuovaTraccia = subject.getLastAddedTrack();
+                if (nuovaTraccia != null) {
+                    Platform.runLater(() -> {
+                        if (trackTableView != null) {
+                            trackTableView.getItems().add(nuovaTraccia);
+                            trackTableView.sort();
+                        }
+                    });
                 }
-            });
+            }
         }
-    }
-    
-    /**
-     * Centralizza la creazione delle finestre di dialogo modali.
-     * Implementato per rispettare il principio DRY, 
-     * evitando la duplicazione strutturale della configurazione degli Alert 
-     * nei vari gestori di eventi.
-     */    
-    private void showAlert(Alert.AlertType type, String title, String mex) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(mex);
-        alert.show();
     }
     
 }

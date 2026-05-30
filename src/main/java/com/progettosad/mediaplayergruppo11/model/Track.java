@@ -57,14 +57,4 @@ public class Track {
     
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }
-    
-    /* * Converte i secondi totali del brano nel formato stringa "MM:SS".
-    * Utilizzato direttamente dalla UI per l'impaginazione dei metadati.
-    */
-    public String getFormattedLength() {
-        if (this.length < 0) return "00:00";
-        int minuti = this.length / 60;
-        int secondi = this.length % 60;
-        return String.format("%02d:%02d", minuti, secondi);
-    }
 }
