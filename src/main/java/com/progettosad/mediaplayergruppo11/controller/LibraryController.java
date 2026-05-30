@@ -27,6 +27,7 @@ import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
 
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_DELETED_PREFIX;
+import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_UPDATED_PREFIX;
 
 
 import java.net.URL;
@@ -212,7 +213,16 @@ public class LibraryController implements Initializable, Observer{
                     });
                 }
             }
+            
+            if (stato.startsWith(EVENT_TRACK_UPDATED_PREFIX)) {
+                Platform.runLater(() -> {
+                    if (trackTableView != null) {
+                        // Forza la tabella a ricaricare i dati visivi
+                        trackTableView.refresh(); 
+                    }
+                });
+            }
         }
     }
-    
+
 }

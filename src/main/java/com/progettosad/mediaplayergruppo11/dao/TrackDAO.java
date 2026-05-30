@@ -128,4 +128,52 @@ public class TrackDAO {
             System.err.println("Errore nell'aggiornamento ascolti: " + e.getMessage());
         }
     }
+    
+    /**
+     * Aggiorna i dati di una traccia esistente nel database PostgreSQL.
+     * * @param track L'oggetto Track contenente i dati aggiornati e l'ID da modificare
+     * @return true se esattamente un record è stato aggiornato, false altrimenti
+     * @throws IllegalArgumentException se l'oggetto è nullo o manca di campi obbligatori (incluso l'ID)
+     * @throws RuntimeException in caso di errori di connessione o SQL
+     */
+    public boolean updateTrack(Track track) {
+        
+        //Validazione dei dati
+        if (track == null || 
+            track.getId() <= 0 || 
+            track.getTitle() == null || track.getTitle().trim().isEmpty() || 
+            track.getArtist() == null || track.getArtist().trim().isEmpty()) {
+            
+            throw new IllegalArgumentException("Dati non validi: ID, titolo e artista sono obbligatori per l'aggiornamento.");
+        }
+
+        //Definizione della query UPDATE
+        String sql = "UPDATE tracks SET title = ?, artist = ?, length = ?, album = ?, publication_year = ?, genre = ?, image = ? WHERE id = ?";
+
+        //Esecuzione tramite blocco try-with-resources
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Mappatura dei parametri
+            pstmt.setString(1, track.getTitle());
+            pstmt.setString(2, track.getArtist());
+            pstmt.setInt(3, track.getLength());
+            pstmt.setString(4, track.getAlbum());
+            pstmt.setInt(5, track.getPublicationYear());
+            pstmt.setString(6, track.getGenre());
+            pstmt.setString(7, track.getImage());
+            
+            pstmt.setInt(8, track.getId());
+
+            //Esecuzione e verifica del risultato
+            int affectedRows = pstmt.executeUpdate();
+
+            // Ritorna true SOLO se è stata modificata esattamente una riga
+            return affectedRows == 1;
+
+        } catch (SQLException e) {
+            // Rilancio dell'eccezione per far gestire l'errore al livello superiore (TrackManager)
+            throw new RuntimeException("Errore SQL durante l'aggiornamento della traccia con ID " + track.getId(), e);
+        }
+    }
 }
