@@ -28,7 +28,7 @@ import java.util.ResourceBundle;
  */
 
 /**
- * Controller per la gestione dell'inserimento di una nuova traccia.
+ * Controller per la gestione del form della traccia (Inserimento e Modifica).
  * Implementa la validazione grafica real-time e delega l'operazione I/O
  * a un thread separato (Task) per preservare la reattività della UI.
  */
@@ -45,13 +45,39 @@ public class InsertTrackController implements Initializable {
     
     @FXML private Button submitButton;
     @FXML private Button backButton;
+    
+    private Track trackToEdit = null;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         backButton.setOnAction(event -> navigateToHome());
-        submitButton.setOnAction(event -> handleInsertTrack());
+        submitButton.setOnAction(event -> handleSaveTrack());
         
         setupGraphicalValidation();
+    }
+    
+    /**
+     * TASK T-03/02: Pre-compila i campi di testo con i valori attuali della traccia selezionata.
+     * Questo metodo viene chiamato dal LibraryController PRIMA di mostrare la scena.
+     */
+    public void setTrackData(Track track) {
+        this.trackToEdit = track;        
+        submitButton.setText("Salva Modifiche");
+
+        titleField.setText(track.getTitle());
+        artistField.setText(track.getArtist());
+        albumField.setText(track.getAlbum() != null ? track.getAlbum() : "");
+        
+        int minuti = track.getLength() / 60;
+        int secondi = track.getLength() % 60;
+        minuteField.setText(String.valueOf(minuti));
+        secondField.setText(String.format("%02d", secondi));
+        
+        yearField.setText(String.valueOf(track.getPublicationYear()));
+        genreField.setText(track.getGenre());
+        imageField.setText(track.getImage() != null ? track.getImage() : "");
+        
+        validateFields();
     }
 
     /**
@@ -79,13 +105,13 @@ public class InsertTrackController implements Initializable {
     }
 
     /**
-     * Istanzia il Task asincrono per l'inserimento. 
+     * Istanzia il Task asincrono per l'inserimento/modifica 
      * Il parsing dei dati numerici avviene all'interno del call() in modo che,
      * in caso di NumberFormatException, l'eccezione venga catturata
      * dal setOnFailed e non causi il crash dell'applicazione.
      */
-    private void handleInsertTrack() {
-        Task<Track> insertTask = new Task<Track>() {
+    private void handleSaveTrack() {
+        Task<Track> saveTask = new Task<Track>() {
             @Override
             protected Track call() throws Exception {
                 
@@ -101,36 +127,52 @@ public class InsertTrackController implements Initializable {
 
                 int totalSeconds = (minutes * 60) + seconds;
                 
-                Track newTrack = new Track(
-                    titleField.getText().trim(),
-                    artistField.getText().trim(),
-                    totalSeconds,
-                    albumField.getText().trim(),
-                    year,
-                    genreField.getText().trim(),
-                    imageField.getText().trim()
-                );
-
-                return TrackManager.getInstance().insertNewTrack(newTrack);
+                if(trackToEdit == null) {
+                    Track newTrack = new Track(
+                        titleField.getText().trim(),
+                        artistField.getText().trim(),
+                        totalSeconds,
+                        albumField.getText().trim(),
+                        year,
+                        genreField.getText().trim(),
+                        imageField.getText().trim()                            
+                    );
+                    
+                    return TrackManager.getInstance().insertNewTrack(newTrack);
+                } else {
+                    trackToEdit.setTitle(titleField.getText().trim());
+                    trackToEdit.setArtist(artistField.getText().trim());
+                    trackToEdit.setLength(totalSeconds);
+                    trackToEdit.setAlbum(albumField.getText().trim());
+                    trackToEdit.setPublicationYear(year);
+                    trackToEdit.setGenre(genreField.getText().trim());
+                    trackToEdit.setImage(imageField.getText().trim());
+                    
+                    // TASK T-03/02: Invocare updateTrack(track)
+                    return TrackManager.getInstance().updateTrack(trackToEdit);
+                }
             }
         };
 
-        // Gestione del fallimento (es. Database offline o formato numerico errato)
-        insertTask.setOnFailed(event -> {
-            Throwable error = insertTask.getException();
-            AlertUtils.show(Alert.AlertType.ERROR, "Errore di Inserimento", error.getMessage());
+        saveTask.setOnFailed(event -> {
+            Throwable error = saveTask.getException();
+            String operazione = trackToEdit == null ? "Inserimento" : "Modifica";
+            AlertUtils.show(Alert.AlertType.ERROR, "Errore di " + operazione, error.getMessage());
         });
 
-        // Gestione del successo: lancio evento di dominio e chiusura schermata
-        insertTask.setOnSucceeded(event -> {
-            Track insertedTrack = insertTask.getValue();            
-            TrackManager.getInstance().notifyTrackAdded(insertedTrack);
-            AlertUtils.show(Alert.AlertType.INFORMATION, "Successo", "Traccia inserita correttamente nella libreria!");
+        saveTask.setOnSucceeded(event -> {
+            Track processedTrack = saveTask.getValue();
+            if (trackToEdit == null) {
+                TrackManager.getInstance().notifyTrackAdded(processedTrack);
+                AlertUtils.show(Alert.AlertType.INFORMATION, "Successo", "Traccia inserita correttamente!");
+            } else {
+                TrackManager.getInstance().notifyTrackUpdated(processedTrack);
+                AlertUtils.show(Alert.AlertType.INFORMATION, "Successo", "Traccia aggiornata correttamente!");
+            }
             navigateToHome();
         });
 
-        // Esecuzione del task in un nuovo Thread (Background)
-        new Thread(insertTask).start();
+        new Thread(saveTask).start();
     }
 
     private void navigateToHome() {

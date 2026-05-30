@@ -26,12 +26,15 @@ import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
 
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
-import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_DELETED_PREFIX;
-import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_UPDATED_PREFIX;
+import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_UPDATED;
+import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_DELETED;
+
 
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.concurrent.Task;
+import javafx.scene.control.Label;
 
 
 /**
@@ -73,20 +76,6 @@ public class LibraryController implements Initializable, Observer{
         this.subject.attach(this);
     }
     
-    /**
-     * Carica inizialmente tutte le tracce dal database PostgreSQL 
-     * inserendole all'interno della TableView.
-     */
-    private void loadLibraryData() {
-        // Recupera la lista ordinata dal Subject
-        java.util.List<Track> allTracks = subject.getAllTracks();
-        
-        if (trackTableView != null) {
-            // Sostituisce il contenuto attuale della tabella con la lista aggiornata
-            trackTableView.getItems().setAll(allTracks);
-        }
-    }
-    
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         
@@ -113,24 +102,36 @@ public class LibraryController implements Initializable, Observer{
             }
         });    
         
-        addTrackButton.setOnAction(event -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/progettosad/mediaplayergruppo11/InsertForm.fxml"));
-                Parent root = loader.load();
-                Scene insertScene = new Scene(root);
-                Stage stage = (Stage) addTrackButton.getScene().getWindow();
-                stage.setScene(insertScene);
-                stage.show();
-            } catch (Exception e) {
-                e.printStackTrace();
-                AlertUtils.show(Alert.AlertType.ERROR, "Errore di Navigazione", "Impossibile caricare la schermata di inserimento.");
-            }
-        });
+        addTrackButton.setOnAction(event -> openTrackForm(null));
+        trackTableView.setPlaceholder(new Label("Nessun brano presente"));
         setupContextMenu();
-        
-        // Popola la tabella con i dati presenti nel DB all'avvio della schermata
-        loadLibraryData();
+        loadLibraryAsync();
     }
+    
+    /**
+     * Metodo centralizzato per aprire il form di traccia.
+     * @param trackToEdit se null apre in modalità Inserimento, se valorizzato in modalità Modifica.
+     */
+    private void openTrackForm(Track trackToEdit) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/progettosad/mediaplayergruppo11/InsertForm.fxml"));
+            Parent root = loader.load();
+
+            if (trackToEdit != null) {
+                InsertTrackController controller = loader.getController();
+                controller.setTrackData(trackToEdit);
+            }
+
+            Scene scene = new Scene(root);
+            Stage stage = (Stage) trackTableView.getScene().getWindow();
+            stage.setScene(scene);
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertUtils.show(Alert.AlertType.ERROR, "Errore", "Impossibile aprire il form.");
+        }
+    }
+    
     
     /**
      * Inoltra la richiesta di riproduzione al motore di playback.
@@ -176,8 +177,16 @@ public class LibraryController implements Initializable, Observer{
         if(trackTableView == null) return;
 
         ContextMenu contextMenu = new ContextMenu();
-        MenuItem deleteItem = new MenuItem("Elimina Traccia");
+        
+        MenuItem editItem = new MenuItem("Modifica Traccia");
+        editItem.setOnAction(event -> {
+            Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
+            if (selectedTrack != null) {
+                openTrackForm(selectedTrack); 
+            }
+        });
 
+        MenuItem deleteItem = new MenuItem("Elimina Traccia");
         deleteItem.setOnAction(event -> {
             Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
             if (selectedTrack != null) {
@@ -193,7 +202,8 @@ public class LibraryController implements Initializable, Observer{
                 });
             }
         });
-        contextMenu.getItems().add(deleteItem);
+        
+        contextMenu.getItems().addAll(editItem, deleteItem);
         trackTableView.setContextMenu(contextMenu);
     }
 
@@ -208,8 +218,7 @@ public class LibraryController implements Initializable, Observer{
         String stato = subject.getState();
         
         if (stato != null) {
-            // Gestione Eliminazione
-            if (stato.startsWith(EVENT_TRACK_DELETED_PREFIX)) {
+            if (stato.startsWith(EVENT_TRACK_DELETED)) {
                 int deletedId = Integer.parseInt(stato.split("_")[2]);
                 Platform.runLater(() -> {
                     if (trackTableView != null) {
@@ -217,10 +226,9 @@ public class LibraryController implements Initializable, Observer{
                     }
                 });
             }
-            
             // T - 01/03: Gestione Inserimento in tempo reale
             if (stato.equals(EVENT_TRACK_ADDED)) {
-                Track nuovaTraccia = subject.getLastAddedTrack();
+                Track nuovaTraccia = subject.getLastProcessedTrack();
                 if (nuovaTraccia != null) {
                     Platform.runLater(() -> {
                         if (trackTableView != null) {
@@ -230,16 +238,41 @@ public class LibraryController implements Initializable, Observer{
                     });
                 }
             }
-            
-            if (stato.startsWith(EVENT_TRACK_UPDATED_PREFIX)) {
+            if (stato.startsWith(EVENT_TRACK_UPDATED)) {
                 Platform.runLater(() -> {
                     if (trackTableView != null) {
                         // Forza la tabella a ricaricare i dati visivi
                         trackTableView.refresh(); 
+                        trackTableView.sort(); 
                     }
                 });
             }
         }
     }
+    
+    /**
+     * T-04/03: Carica inizialmente tutte le tracce dal database in modo asincrono.
+     * Utilizza un Task per non bloccare il JavaFX Application Thread.
+     */
+    private void loadLibraryAsync() {
+        Task<java.util.List<Track>> loadTask = new Task<>() {
+            @Override
+            protected java.util.List<Track> call() throws Exception {
+                return subject.getAllTracks();
+            }
+        };
 
+        loadTask.setOnSucceeded(event -> {
+            java.util.List<Track> allTracks = loadTask.getValue();
+            if (trackTableView != null && allTracks != null) {
+                trackTableView.getItems().setAll(allTracks);
+            }
+        });
+        
+        loadTask.setOnFailed(event -> {
+            AlertUtils.show(Alert.AlertType.ERROR, "Errore di Connessione", "Impossibile caricare la libreria.");
+        });
+
+        new Thread(loadTask).start();
+    }
 }

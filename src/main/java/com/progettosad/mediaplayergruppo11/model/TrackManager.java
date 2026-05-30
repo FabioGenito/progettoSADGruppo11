@@ -15,12 +15,12 @@ import java.util.List;
 public class TrackManager implements Subject{
     
     public static final String EVENT_TRACK_ADDED = "ADDED_TRACK";
-    public static final String EVENT_TRACK_DELETED_PREFIX = "DELETED_TRACK_";
-    public static final String EVENT_TRACK_UPDATED_PREFIX = "UPDATED_TRACK_";
+    public static final String EVENT_TRACK_DELETED = "DELETED_TRACK";
+    public static final String EVENT_TRACK_UPDATED = "UPDATED_TRACK";
     
     private static TrackManager instance;
     private String state;
-    private Track lastAddedTrack;
+    private Track lastProcessedTrack;
     private TrackDAO dao; 
     private List<Observer> observers = new ArrayList<>();
     
@@ -45,13 +45,19 @@ public class TrackManager implements Subject{
      * veicolando il nuovo oggetto.
      */
     public void notifyTrackAdded(Track track) {
-        this.lastAddedTrack = track;
+        this.lastProcessedTrack = track;
         this.state = EVENT_TRACK_ADDED;
         notifyObservers();
     }
     
-    public Track getLastAddedTrack() {
-        return lastAddedTrack;
+    public void notifyTrackUpdated(Track track) {
+        this.lastProcessedTrack = track;
+        this.state = EVENT_TRACK_UPDATED;
+        notifyObservers();
+    }
+    
+    public Track getLastProcessedTrack() {
+        return lastProcessedTrack;
     }
     
     
@@ -87,9 +93,9 @@ public class TrackManager implements Subject{
     public void deleteTrack(int trackId) {
         //Delega l'operazione al database tramite il DAO
         boolean isDeleted = dao.deleteTrack(trackId);
-        //Se l'eliminazione h avuto successo, aggiorna lo stato e notifica
+        //Se l'eliminazione ha avuto successo, aggiorna lo stato e notifica
         if (isDeleted) {
-            this.state = EVENT_TRACK_DELETED_PREFIX + trackId;
+            this.state = EVENT_TRACK_DELETED + trackId;
             System.out.println("TrackManager: Traccia eliminata dal DB. Emetto notifica agli Observer...");
             notifyObservers();
         } else {
@@ -101,27 +107,23 @@ public class TrackManager implements Subject{
      * Coordina l'aggiornamento di una traccia, gestendo gli errori e le notifiche.
      * @param track L'oggetto Track con i dati modificati
      */
-    public void updateTrack(Track track) {
+    public Track updateTrack(Track track) {
         try {
-            // Delega l'operazione al database tramite il DAO (usando la tua variabile 'dao')
+            // Delega l'operazione al database tramite il DAO
             boolean isUpdated = dao.updateTrack(track);
 
-            // Se l'update ha successo, aggiorna lo stato e notifica la UI
             if (isUpdated) {
-                // Usa la tua variabile 'state' e la nuova costante
-                this.state = EVENT_TRACK_UPDATED_PREFIX + track.getId();
                 System.out.println("TrackManager: Traccia aggiornata nel DB. Emetto notifica agli Observer...");
-                notifyObservers();
-            } else {
-                System.err.println("TrackManager: Impossibile aggiornare. Nessuna traccia trovata con ID " + track.getId());
-            }
-
+            } 
         } catch (IllegalArgumentException e) {
             System.err.println("TrackManager Errore di Validazione: " + e.getMessage());
+            throw e;
         } catch (RuntimeException e) {
             System.err.println("TrackManager Errore di Sistema: Impossibile comunicare con il database.");
             e.printStackTrace(); 
+            throw e;
         }
+        return track;
     }
     
     /**

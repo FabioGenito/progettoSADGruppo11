@@ -57,4 +57,8 @@ public class Track {
     
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }
+    
+    public String getFormattedLength() {
+        return com.progettosad.mediaplayergruppo11.utils.TimeUtils.formatSecondsToMinutes(this.length);
+    }
 }
