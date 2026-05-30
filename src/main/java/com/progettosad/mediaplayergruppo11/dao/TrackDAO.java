@@ -4,18 +4,19 @@
  */
 package com.progettosad.mediaplayergruppo11.dao;
 
-/**
- *
- * @author gcucc
- */
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.db.DatabaseManager;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+/**
+ *
+ * @author gcucc
+ */
 
 public class TrackDAO {
 
@@ -176,4 +177,47 @@ public class TrackDAO {
             throw new RuntimeException("Errore SQL durante l'aggiornamento della traccia con ID " + track.getId(), e);
         }
     }
+    
+    /**
+ * Estrae l'elenco completo delle tracce presenti nel database, ordinate per titolo.
+ * * @return Una lista di oggetti Track ordinati alfabeticamente per titolo.
+ * Se non ci sono tracce, restituisce una lista vuota.
+ * @throws RuntimeException in caso di errori SQL o di connessione.
+ */
+public List<Track> getAllTracks() {
+    List<Track> trackList = new ArrayList<>();
+    
+    // Query SQL ordinata alfabeticamente per titolo
+    String sql = "SELECT * FROM Tracks ORDER BY title ASC";
+
+    // Try-with-resources per gestire la chiusura automatica di Connessione, Statement e ResultSet
+    try (Connection conn = DatabaseManager.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql);
+         ResultSet rs = pstmt.executeQuery()) {
+
+        // Scorre il ResultSet riga per riga fino all'ultimo record
+        while (rs.next()) {
+            Track track = new Track();
+            
+            // Effettua il mapping esplicito di ogni colonna del DB
+            track.setId(rs.getInt("id"));
+            track.setTitle(rs.getString("title"));
+            track.setArtist(rs.getString("artist"));
+            track.setLength(rs.getInt("length"));
+            track.setAlbum(rs.getString("album"));
+            track.setPublicationYear(rs.getInt("publication_year"));
+            track.setGenre(rs.getString("genre"));
+            track.setImage(rs.getString("image"));
+
+            // Aggiunge la traccia appena mappata alla lista dei risultati
+            trackList.add(track);
+        }
+
+    } catch (SQLException e) {
+        // Lancio dell'eccezione verso l'alto per informare il TrackManager
+        throw new RuntimeException("Errore SQL durante il recupero della lista delle tracce.", e);
+    }
+
+    return trackList;
+}
 }

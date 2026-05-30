@@ -73,6 +73,20 @@ public class LibraryController implements Initializable, Observer{
         this.subject.attach(this);
     }
     
+    /**
+     * Carica inizialmente tutte le tracce dal database PostgreSQL 
+     * inserendole all'interno della TableView.
+     */
+    private void loadLibraryData() {
+        // Recupera la lista ordinata dal Subject
+        java.util.List<Track> allTracks = subject.getAllTracks();
+        
+        if (trackTableView != null) {
+            // Sostituisce il contenuto attuale della tabella con la lista aggiornata
+            trackTableView.getItems().setAll(allTracks);
+        }
+    }
+    
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         
@@ -113,6 +127,9 @@ public class LibraryController implements Initializable, Observer{
             }
         });
         setupContextMenu();
+        
+        // Popola la tabella con i dati presenti nel DB all'avvio della schermata
+        loadLibraryData();
     }
     
     /**

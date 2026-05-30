@@ -123,4 +123,24 @@ public class TrackManager implements Subject{
             e.printStackTrace(); 
         }
     }
+    
+    /**
+     * Recupera l'elenco completo delle tracce delegando l'operazione al DAO.
+     * Gestisce i potenziali errori di sistema per proteggere il ciclo di vita della UI.
+     * @return Una lista di oggetti Track ordinati per titolo, oppure una lista vuota in caso di errore.
+     */
+    public List<Track> getAllTracks() {
+        try {
+            // Delega la lettura al DAO
+            return dao.getAllTracks();
+            
+        } catch (RuntimeException e) {
+            // Intercetta l'errore di connessione o SQL lanciato dal DAO
+            System.err.println("TrackManager Errore di Sistema: Impossibile recuperare il catalogo musicale.");
+            e.printStackTrace();
+            
+            // Ritorna una lista vuota sicura per evitare NullPointerException nei componenti grafici
+            return new ArrayList<>();
+        }
+    }
 }
