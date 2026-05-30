@@ -129,14 +129,14 @@
                                 <HBox alignment="CENTER" spacing="25.0">
                                     <children>
                                         <Button fx:id="shuffleButton" mnemonicParsing="false" style="-fx-background-color: transparent; -fx-cursor: hand;" text="🔀" textFill="#a7a7a7" />
-                                        <Button fx:id="backButton" mnemonicParsing="false" style="-fx-background-color: transparent; -fx-cursor: hand;" text="⏮" textFill="WHITE">
+                                        <Button fx:id="backButton" onAction="#handleStop" mnemonicParsing="false" style="-fx-background-color: transparent; -fx-cursor: hand;" text="⏮" textFill="WHITE">
                                             <font><Font size="16.0" /></font>
                                         </Button>
-                                        <Button fx:id="playerButton" alignment="CENTER" mnemonicParsing="false" prefHeight="42.0" prefWidth="42.0" style="-fx-background-color: white; -fx-background-radius: 50; -fx-cursor: hand;" text="▶" textFill="BLACK">
+                                        <Button fx:id="playerButton" onAction="#handlePlay" alignment="CENTER" mnemonicParsing="false" prefHeight="42.0" prefWidth="42.0" style="-fx-background-color: white; -fx-background-radius: 50; -fx-cursor: hand;" text="▶" textFill="BLACK">
                                             <font><Font name="System Bold" size="16.0" /></font>
                                             <padding><Insets left="3.0" /></padding>
                                         </Button>
-                                        <Button fx:id="skipButton" mnemonicParsing="false" style="-fx-background-color: transparent; -fx-cursor: hand;" text="⏭" textFill="WHITE">
+                                        <Button fx:id="skipButton" onAction="#handlePause" mnemonicParsing="false" style="-fx-background-color: transparent; -fx-cursor: hand;" text="⏭" textFill="WHITE">
                                             <font><Font size="16.0" /></font>
                                         </Button>
                                         <Button fx:id="loopButton" mnemonicParsing="false" style="-fx-background-color: transparent; -fx-cursor: hand;" text="🔁" textFill="#a7a7a7" />
