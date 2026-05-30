@@ -6,7 +6,7 @@ package com.progettosad.mediaplayergruppo11.model;
 
 /**
  *
- * @author gcucc
+ * @author Lara
  */
 
 public class Track {

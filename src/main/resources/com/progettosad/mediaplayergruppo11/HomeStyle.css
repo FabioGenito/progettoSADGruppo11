@@ -1,0 +1,74 @@
+/*
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to edit this template
+*/
+/* 
+    Created on : 30 mag 2026, 13:29:07
+    Author     : FabioGenito
+*/
+/* Rimuove i bordi esterni e imposta lo sfondo scuro */
+.table-view {
+    -fx-background-color: #121212;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+/* Nasconde i bordi delle colonne */
+.table-view .column-header-background {
+    -fx-background-color: #121212;
+    -fx-border-color: #282828;
+    -fx-border-width: 0 0 1 0; /* Linea sottile solo sotto l'header */
+    -fx-padding: 0 0 5 0;
+}
+
+/* Stile per le intestazioni (Titoli colonne) */
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 40;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #b3b3b3; /* Grigio Spotify */
+    -fx-font-family: "Inter", "Segoe UI";
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-transform: uppercase; /* Rende tutto maiuscolo per lo stile Pro */
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* Effetto Smooth al passaggio del mouse sull'header */
+.table-view .column-header:hover {
+    -fx-background-color: #282828;
+}
+
+/* Rimuove la colonna "vuota" finale se presente */
+.table-view .filler {
+    -fx-background-color: transparent;
+}
+
+/* Stile per le celle (i dati) */
+.table-row-cell {
+    -fx-background-color: transparent;
+    -fx-cell-size: 50; /* Celle un po' più alte come su Spotify */
+}
+
+.table-row-cell:filled:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.1); /* Effetto hover riga */
+}
+
+.table-row-cell:filled:selected {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-background-insets: 0;
+}
+
+.table-cell {
+    -fx-text-fill: #b3b3b3;
+    -fx-border-color: transparent;
+    -fx-padding: 0 10 0 10;
+}
+
+/* Titolo brano più luminoso (bianco) */
+.col-titolo-style {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
