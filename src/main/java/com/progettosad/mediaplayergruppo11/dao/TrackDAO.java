@@ -116,4 +116,16 @@ public class TrackDAO {
 
         return success;
     }
+    //incremento del contatore delle riproduzione di un brano 
+    public void incrementPlayCount(int trackId){
+        String sql = "UPDATE tracks SET play_count=play_count + 1 WHERE id =?";
+        try(Connection conn=DatabaseManager.getConnection();
+                PreparedStatement pstmt=conn.prepareStatement(sql)){
+            pstmt.setInt(1,trackId);
+            pstmt.executeUpdate();
+            System.out.println("Contatore ascolti aggiornato per la traccia: " + trackId);
+        }catch (SQLException e){
+            System.err.println("Errore nell'aggiornamento ascolti: " + e.getMessage());
+        }
+    }
 }
