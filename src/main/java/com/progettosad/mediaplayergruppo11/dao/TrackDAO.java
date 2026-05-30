@@ -34,8 +34,7 @@ public class TrackDAO {
             
             throw new IllegalArgumentException("Il titolo e l'autore non possono essere vuoti o nulli.");
         }
-
-        // 2. Query SQL
+        
         String sql = "INSERT INTO tracks (title, artist,length, album, publication_year, genre, image) VALUES (?,?,?,?,?,?,?)";
 
         // 3. Gestione della connessione e dello statement con try-with-resources
