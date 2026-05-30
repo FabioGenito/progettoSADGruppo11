@@ -27,7 +27,7 @@ public class TrackDAO {
      */
     public Track insertTrack(Track track) {
         
-        // 1. Validazione dei dati
+        //Validazione dei dati
         if (track == null || 
             track.getTitle() == null || track.getTitle().trim().isEmpty() || 
             track.getArtist() == null || track.getArtist().trim().isEmpty()) {
@@ -37,7 +37,7 @@ public class TrackDAO {
         
         String sql = "INSERT INTO tracks (title, artist,length, album, publication_year, genre, image) VALUES (?,?,?,?,?,?,?)";
 
-        // 3. Gestione della connessione e dello statement con try-with-resources
+        //Gestione della connessione e dello statement con try-with-resources
         //Statement.RETURN_GENERATED_KEYS recupera l'ID autogenerato da PostgreSQL
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -54,7 +54,7 @@ public class TrackDAO {
             // Esecuzione della query
             int affectedRows = pstmt.executeUpdate();
 
-            // 4. Recupero dell'ID generato 
+            //Recupero dell'ID generato 
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
@@ -69,5 +69,51 @@ public class TrackDAO {
         }
 
         return track;
+    }
+    
+    /**
+     * Elimina una traccia dal database utilizzando una transazione esplicita.
+     * Notifica gli observer in caso di successo.
+     * * @param trackId L'ID della traccia da eliminare
+     * @return true se la traccia è stata eliminata, false se non è stata trovata
+     */
+    public boolean deleteTrack(int trackId) {
+        String sql = "DELETE FROM tracks WHERE id = ?";
+        boolean success = false;
+
+        // Otteniamo la connessione nel blocco try-with-resources principale
+        try (Connection conn = DatabaseManager.getConnection()) {
+            
+            //Disabilitiamo l'autocommit per iniziare la transazione manuale
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, trackId);
+                
+                int affectedRows = pstmt.executeUpdate();
+
+                if (affectedRows > 0){
+                    conn.commit();
+                    success = true;
+                } else {
+                    conn.rollback();
+                    System.out.println("Nessuna traccia trovata con ID: " + trackId);
+                }
+
+            } catch (SQLException e) {
+                //Errore: effettuiamo il rollback per annullare qualsiasi modifica parziale
+                conn.rollback();
+                throw new RuntimeException("Errore SQL durante l'eliminazione. Transazione annullata tramite rollback.", e);
+            } finally {
+                //Ripristiniamo l'autocommit allo stato originale 
+                //prima che la connessione venga chiusa o restituita al pool di connessioni
+                conn.setAutoCommit(true);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore di connessione al database durante la cancellazione", e);
+        }
+
+        return success;
     }
 }

@@ -1,5 +1,6 @@
-package com.progettosad.mediaplayergruppo11;
+package com.progettosad.mediaplayergruppo11.controller;
 
+import com.progettosad.mediaplayergruppo11.App;
 import java.io.IOException;
 import javafx.fxml.FXML;
 
