@@ -4,6 +4,7 @@
  */
 package com.progettosad.mediaplayergruppo11.model;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
+import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
@@ -11,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  *
- * @author irene
+ * @author irene e Fabio
  * Implementato tramite pattern Singleton per garantire che esista
  * una sola istanza Timeline e uno solo stato di ripoduzione
  */
@@ -83,8 +84,8 @@ public class PlaybackEngine {
         currentState.stop(this);
     }
     
-    public void getCurrentState(PlayerState state){
-        this.currentState=state;
+    public PlayerState getCurrentState(){
+        return this.currentState;
     }
     
     public void setCurrentState(PlayerState state){
@@ -97,5 +98,24 @@ public class PlaybackEngine {
     
     public void setCurrentTime(int t){
         this.currentTime=t;
+    }
+    
+    /**
+     * Determina la traccia da riprodurre garantendo un fallback controllato.
+     * Se l'utente preme "Play" senza aver selezionato esplicitamente un brano, 
+     * la regola di dominio impone di avviare automaticamente la prima traccia della lista.
+     * @throws IllegalStateException se la lista fornita è vuota o inesistente.
+     */
+    public void playSelection(Track selectedTrack, List<Track> currentPlaylist) throws IllegalStateException {
+        if (currentPlaylist == null || currentPlaylist.isEmpty()) {
+            throw new IllegalStateException("Non ci sono tracce disponibili. Impossibile avviare la riproduzione.");
+        }
+
+        Track trackToPlay = selectedTrack;
+        if (trackToPlay == null) {
+            trackToPlay = currentPlaylist.get(0);
+        }
+
+        playTrack(trackToPlay);
     }
 }

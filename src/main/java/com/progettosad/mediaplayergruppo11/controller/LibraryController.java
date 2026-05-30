@@ -24,7 +24,7 @@ import javafx.scene.control.MenuItem;
  * Controller della vista principale della libreria musicale.
  * Gestisce il caricamento e l'interazione con la lista delle playlist 
  * e la tabella dei brani suggeriti/in riproduzione.
- * * @author FabioGenito
+ * * @author FabioGenito e irene
  */
 public class LibraryController implements Initializable, Observer{
 
@@ -48,7 +48,7 @@ public class LibraryController implements Initializable, Observer{
     private TableColumn<Track, String> colAlbum;
 
     @FXML
-    private TableColumn<Track, Integer> colDurata;
+    private TableColumn<Track, String> colDurata;
     
     public LibraryController() {
         this.subject = new TrackManager();
@@ -61,27 +61,8 @@ public class LibraryController implements Initializable, Observer{
         colTitolo.setCellValueFactory(new PropertyValueFactory<>("title"));
         colArtista.setCellValueFactory(new PropertyValueFactory<>("artist"));
         colAlbum.setCellValueFactory(new PropertyValueFactory<>("album"));
-        colDurata.setCellValueFactory(new PropertyValueFactory<>("length"));
-
-        /* * Formattazione custom per la durata:
-         * Il Modello restituisce i secondi totali come intero. 
-         * Utilizziamo una CellFactory per convertire dinamicamente questo valore 
-         * nel classico formato stringa "MM:SS" richiesto dalla UI.
-         */
-        colDurata.setCellFactory(column -> new TableCell<Track, Integer>() {
-            @Override
-            protected void updateItem(Integer item, boolean empty) {
-                super.updateItem(item, empty);
-                
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    int minuti = item / 60;
-                    int secondi = item % 60;                    
-                    setText(String.format("%02d:%02d", minuti, secondi));
-                }
-            }
-        });
+        colDurata.setCellValueFactory(new PropertyValueFactory<>("formattedLength"));
+        colDurata.setStyle("-fx-alignment: CENTER_RIGHT");
         
         /* * Generazione automatica dell'indice di riga:
          * La colonna non è legata a un attributo del Modello, ma sfrutta 
@@ -98,45 +79,50 @@ public class LibraryController implements Initializable, Observer{
                     setStyle("-fx-alignment: CENTER;");
                 }
             }
-        });
-        
-        colDurata.setStyle("-fx-alignment: CENTER_RIGHT;");
-        
+        });        
         setupContextMenu();
     }
     
+    /**
+     * Inoltra la richiesta di riproduzione al motore di playback.
+     * Mantiene il Controller passivo delegando il controllo dello stato (es. libreria vuota) 
+     * al Modello; intercetta eventuali eccezioni di dominio per fornire un feedback visivo all'utente.
+     */
     @FXML
     private void handlePlay(){
-        System.out.println("Pressione tasto Play");
-        if (trackTableView.getItems().isEmpty()) {
-            Alert emptyAlert = new Alert(Alert.AlertType.WARNING);
-            emptyAlert.setTitle("Libreria Vuota");
-            emptyAlert.setHeaderText(null);
-            emptyAlert.setContentText("Non ci sono tracce disponibili. Impossibile avviare la riproduzione.");
-            emptyAlert.show();
-            return; 
+        Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
+        try {
+            PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
+        } catch(IllegalStateException e) {
+            showAlert(Alert.AlertType.WARNING, "Libreria Vuota", e.getMessage());
         }
-
-        Track tracciaSelezionata = trackTableView.getSelectionModel().getSelectedItem();
-        if (tracciaSelezionata == null) {
-            tracciaSelezionata = trackTableView.getItems().get(0);
-            trackTableView.getSelectionModel().select(0);
-        }
-        PlaybackEngine.getInstance().playTrack(tracciaSelezionata);
     }
-
+    
+    /**
+     * Delega l'interruzione temporanea della riproduzione al PlaybackEngine.
+     * Il rispetto del pattern Passive View impone che il Controller non mantenga
+     * traccia dello stato in esecuzione.
+     */
     @FXML
     private void handlePause() {
-        System.out.println("Pressione tasto PAUSA");
         PlaybackEngine.getInstance().pauseTrack();
     }
 
+    /**
+     * Delega l'arresto definitivo della riproduzione al PlaybackEngine,
+     * reimpostando il ciclo di vita del brano a livello di Modello.
+     */
     @FXML
     private void handleStop() {
-        System.out.println("Pressione tasto STOP");
         PlaybackEngine.getInstance().stopTrack();
     }
 
+    /**
+     * Configura il menu contestuale (tasto destro) per la tabella dei brani.
+     * L'azione di conferma elimina la traccia esclusivamente dal subject (TrackManager).
+     * La View non viene forzata ad aggiornarsi qui, prevenendo disallineamenti: l'aggiornamento
+     * visivo avverrà solo a valle, tramite la notifica dell'Observer.
+     */
     private void setupContextMenu() {
         if(trackTableView == null) return;
 
@@ -153,11 +139,7 @@ public class LibraryController implements Initializable, Observer{
                 
                 confirm.showAndWait().ifPresent(response -> {
                     if (response == ButtonType.OK) {
-                        boolean esitoDb = trackTableView.getItems().remove(selectedTrack);
-                        if (esitoDb) {
-                            subject.deleteTrack(selectedTrack.getId());
-                            Platform.runLater(() -> trackTableView.getItems().removeIf(t -> t.getId() == selectedTrack.getId()));
-                        }
+                        subject.deleteTrack(selectedTrack.getId());
                     }
                 });
             }
@@ -166,6 +148,12 @@ public class LibraryController implements Initializable, Observer{
         trackTableView.setContextMenu(contextMenu);
     }
 
+    /**
+     * Implementazione del contratto Observer. 
+     * Reagisce alle variazioni di stato notificate dal TrackManager, filtrando gli eventi 
+     * di eliminazione (DELETED_TRACK). L'aggiornamento della UI è racchiuso in Platform.runLater 
+     * per garantire la thread-safety con il thread grafico di JavaFX.
+     */
     @Override
     public void update() {
         String stato = subject.getState();
@@ -174,13 +162,24 @@ public class LibraryController implements Initializable, Observer{
             Platform.runLater(() -> {
                 if (trackTableView != null) {
                     trackTableView.getItems().removeIf(track -> track.getId() == deletedId);
-                    Alert info = new Alert(Alert.AlertType.INFORMATION);
-                    info.setTitle("Notifica Observer");
-                    info.setHeaderText(null);
-                    info.setContentText("Sincronizzazione completata");
-                    info.show();
+                    showAlert(Alert.AlertType.INFORMATION, "Notifica Observer", "traccia rimossa");
                 }
             });
         }
     }
+    
+    /**
+     * Centralizza la creazione delle finestre di dialogo modali.
+     * Implementato per rispettare il principio DRY, 
+     * evitando la duplicazione strutturale della configurazione degli Alert 
+     * nei vari gestori di eventi.
+     */    
+    private void showAlert(Alert.AlertType type, String title, String mex) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(mex);
+        alert.show();
+    }
+    
 }
