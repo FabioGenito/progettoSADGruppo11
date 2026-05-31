@@ -18,7 +18,7 @@ import java.util.List;
  * @author gcucc
  */
 
-public class TrackDAO {
+public class TrackDAO implements TrackDAOInterface {
 
     /**
      * Inserisce un oggetto Track nel database PostgreSQL.
@@ -26,6 +26,7 @@ public class TrackDAO {
      * @return L'oggetto Track aggiornato con l'ID generato dal database
      * @throws IllegalArgumentException se il track è nullo o se titolo/autore sono vuoti o nulli
      */
+    @Override
     public Track insertTrack(Track track) {
         
         //Validazione dei dati
@@ -78,6 +79,7 @@ public class TrackDAO {
      * * @param trackId L'ID della traccia da eliminare
      * @return true se la traccia è stata eliminata, false se non è stata trovata
      */
+    @Override
     public boolean deleteTrack(int trackId) {
         String sql = "DELETE FROM tracks WHERE id = ?";
         boolean success = false;
@@ -137,6 +139,7 @@ public class TrackDAO {
      * @throws IllegalArgumentException se l'oggetto è nullo o manca di campi obbligatori (incluso l'ID)
      * @throws RuntimeException in caso di errori di connessione o SQL
      */
+    @Override
     public boolean updateTrack(Track track) {
         
         //Validazione dei dati
@@ -184,7 +187,8 @@ public class TrackDAO {
  * Se non ci sono tracce, restituisce una lista vuota.
  * @throws RuntimeException in caso di errori SQL o di connessione.
  */
-public List<Track> getAllTracks() {
+    @Override
+    public List<Track> getAllTracks() {
     List<Track> trackList = new ArrayList<>();
     
     // Query SQL ordinata alfabeticamente per titolo
