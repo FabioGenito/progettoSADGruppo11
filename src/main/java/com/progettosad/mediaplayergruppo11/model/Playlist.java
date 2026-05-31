@@ -43,4 +43,12 @@ public class Playlist {
         this.image = image;
     }
     
+    /**
+     * Mostrare il nome della playlist a schermo.
+     */
+    @Override
+    public String toString() {
+        return this.name;
+    }
+    
 }

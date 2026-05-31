@@ -5,6 +5,7 @@
 package com.progettosad.mediaplayergruppo11.dao;
 
 import com.progettosad.mediaplayergruppo11.model.Playlist;
+import com.progettosad.mediaplayergruppo11.model.Track;
 import java.util.List;
 
 /**
@@ -16,5 +17,5 @@ public interface PlaylistDAOInterface {
     List<Playlist> getAllPlaylists();
     boolean addTrackToPlaylist(int playlistId, int trackId);
     boolean removeTrackFromPlaylist(int playlistId, int trackId);
-    
+    List<Track> getTracksByPlaylist(int playlistId);
 }

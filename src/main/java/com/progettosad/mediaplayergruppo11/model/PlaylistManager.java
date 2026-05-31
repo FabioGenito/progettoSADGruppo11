@@ -105,6 +105,21 @@ public class PlaylistManager implements Subject {
         backgroundThread.setDaemon(true); // Permette all'applicazione di chiudersi anche se il thread è in esecuzione
         backgroundThread.start();
     }
+    
+    /**
+     * Recupera l'elenco completo delle playlist delegando l'operazione al DAO.
+     * Gestisce i potenziali errori di sistema restituendo una lista vuota per sicurezza.
+     * @return Lista di Playlist o lista vuota in caso di errore.
+     */
+    public List<Playlist> getAllPlaylists() {
+        try {
+            return dao.getAllPlaylists();
+        } catch (RuntimeException e) {
+            System.err.println("PlaylistManager Errore: Impossibile recuperare le playlist.");
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
 
     // --- Implementazione dei metodi dell'interfaccia Subject ---
 

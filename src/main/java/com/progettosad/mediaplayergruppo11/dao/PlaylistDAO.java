@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import com.progettosad.mediaplayergruppo11.db.DatabaseManager;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
+import com.progettosad.mediaplayergruppo11.model.Track;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -19,9 +20,8 @@ public class PlaylistDAO implements PlaylistDAOInterface {
     !! la playlist è scritta con \ \ perchè sql non è case sensitive e non 
     riconosce la maiuscola
     */
-    private static final String INSERT_PLAYLIST ="INSERT INTO \"playlist\"(name, image) VALUES (?, ?)";
-    private static final String SELECT_ALL_PLAYLISTS = "SELECT id, name, image FROM \"Playlist\" ORDER BY id ASC";
-
+    private static final String INSERT_PLAYLIST = "INSERT INTO playlist(name, image) VALUES (?, ?)";
+    private static final String SELECT_ALL_PLAYLISTS = "SELECT id, name, image FROM playlist ORDER BY id ASC";
     /**
      * Crea una nuova playlist nel database e ne recupera l'ID generato automaticamente.
      * * @param name  Il nome della playlist (non può essere nullo o vuoto).
@@ -184,5 +184,50 @@ public class PlaylistDAO implements PlaylistDAOInterface {
         } catch (SQLException e) {
             throw new RuntimeException("Errore SQL durante la rimozione della traccia dalla playlist", e);
         }
+    }
+
+    /**
+     * T-013/01: Estrae tutti i brani associati a una specifica playlist tramite una JOIN.
+     * @param playlistId L'ID della playlist da esplorare
+     * @return Una lista di oggetti Track ordinati alfabeticamente
+     */
+    @Override
+    public List<Track> getTracksByPlaylist(int playlistId) {
+        List<Track> tracks = new ArrayList<>();
+        
+        // La JOIN collega la tabella principale Tracks con la tabella di giunzione
+        String sql = "SELECT t.* FROM Tracks t " +
+                     "JOIN playlist_tracks pt ON t.id = pt.track_id " +
+                     "WHERE pt.playlist_id = ? " +
+                     "ORDER BY t.title ASC";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, playlistId);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Track track = new Track();
+                    
+                    // Mapping fedele dei campi del database
+                    track.setId(rs.getInt("id"));
+                    track.setTitle(rs.getString("title"));
+                    track.setArtist(rs.getString("artist"));
+                    track.setLength(rs.getInt("length"));
+                    track.setAlbum(rs.getString("album"));
+                    track.setPublicationYear(rs.getInt("publication_year"));
+                    track.setGenre(rs.getString("genre"));
+                    track.setImage(rs.getString("image"));
+                    
+                    tracks.add(track);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore SQL durante l'estrazione delle tracce per la playlist " + playlistId, e);
+        }
+
+        return tracks;
     }
 }

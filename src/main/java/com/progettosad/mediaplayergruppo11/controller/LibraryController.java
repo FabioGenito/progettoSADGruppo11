@@ -17,12 +17,15 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
+ import javafx.concurrent.Task;
+import java.util.List;
 
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
+import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
 
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
@@ -106,6 +109,7 @@ public class LibraryController implements Initializable, Observer{
         trackTableView.setPlaceholder(new Label("Nessun brano presente"));
         setupContextMenu();
         loadLibraryAsync();
+        loadInitialDataAsync();
     }
     
     /**
@@ -274,5 +278,52 @@ public class LibraryController implements Initializable, Observer{
         });
 
         new Thread(loadTask).start();
+    } 
+
+    /**
+     * T-13/01: Carica simultaneamente Tracce e Playlist in background all'avvio.
+     * Utilizza un Task per non bloccare il thread di rendering di JavaFX.
+     */
+    private void loadInitialDataAsync() {
+        
+        Task<Void> loadDataTask = new Task<Void>() {
+            
+            // Strutture dati temporanee interne al Task
+            // Conservano i dati grezzi estratti da PostgreSQL prima di inietterli nella UI
+            private List<Track> tempTracks;
+            private List<Playlist> tempPlaylists;
+
+            @Override
+            protected Void call() throws Exception {
+                // Interroghiamo i Manager/DAO per ottenere i dati
+                tempTracks = TrackManager.getInstance().getAllTracks();
+                tempPlaylists = PlaylistManager.getInstance().getAllPlaylists();
+                
+                //FASE DI AGGIORNAMENTO UI
+                // Platform.runLater forza l'esecuzione di questo frammento sul thread grafico principale
+                Platform.runLater(() -> {
+                    if (trackTableView != null) {
+                        trackTableView.getItems().setAll(tempTracks);
+                    }
+                    if (playlistListView != null) {
+                        playlistListView.getItems().setAll(tempPlaylists);
+                    }
+                    System.out.println("Tabelle UI aggiornate con successo.");
+                });
+                
+                return null;
+            }
+        };
+
+        // Gestione di eventuali crash di connessione durante l'avvio
+        loadDataTask.setOnFailed(event -> {
+            System.err.println("Errore critico durante il caricamento iniziale dei dati.");
+            loadDataTask.getException().printStackTrace();
+        });
+
+        // Avvio del thread in background (impostato come Daemon per non bloccare la chiusura dell'app)
+        Thread backgroundThread = new Thread(loadDataTask);
+        backgroundThread.setDaemon(true); 
+        backgroundThread.start();
     }
 }
