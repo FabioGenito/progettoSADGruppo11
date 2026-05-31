@@ -43,4 +43,29 @@ public class PlaylistDAO {
             throw new RuntimeException("Errore SQL durante l'aggiunta della traccia alla playlist", e);
         }
     }
+    
+    /**
+     * Rimuove l'associazione tra una traccia e una playlist.
+     * @param playlistId ID della playlist
+     * @param trackId ID della traccia da rimuovere
+     * @return true se la rimozione ha successo (una riga eliminata), false altrimenti
+     */
+    public boolean removeTrackFromPlaylist(int playlistId, int trackId) {
+        String sql = "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, playlistId);
+            pstmt.setInt(2, trackId);
+
+            int affectedRows = pstmt.executeUpdate();
+            
+            // Restituisce true rigorosamente solo se esattamente un record è stato eliminato
+            return affectedRows == 1;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore SQL durante la rimozione della traccia dalla playlist", e);
+        }
+    }
 }

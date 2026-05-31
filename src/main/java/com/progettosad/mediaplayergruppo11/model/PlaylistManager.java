@@ -6,11 +6,14 @@ import com.progettosad.mediaplayergruppo11.observer.Observer;
 import com.progettosad.mediaplayergruppo11.observer.Subject;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.concurrent.Task;
 
 public class PlaylistManager implements Subject {
 
     // Costante per identificare univocamente l'evento di modifica di una playlist
     public static final String EVENT_TRACK_ADDED_TO_PLAYLIST_PREFIX = "ADDED_TO_PLAYLIST_";
+    // Costante per identificare univocamente l'evento di rimozione da una playlist
+    public static final String EVENT_TRACK_REMOVED_FROM_PLAYLIST_PREFIX = "REMOVED_FROM_PLAYLIST_";
 
     private static PlaylistManager instance;
     private String state;
@@ -62,6 +65,45 @@ public class PlaylistManager implements Subject {
             System.err.println("PlaylistManager Errore di Sistema: Impossibile completare l'operazione.");
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Coordina la rimozione di una traccia in modo asincrono per non bloccare la UI.
+     * @param playlistId L'ID della playlist
+     * @param trackId L'ID della traccia da scollegare
+     */
+    public void removeTrackFromPlaylistAsync(int playlistId, int trackId) {
+        //Creazione del Task asincrono
+        Task<Boolean> removeTask = new Task<Boolean>() {
+            @Override
+            protected Boolean call() throws Exception {
+                // Questo codice viene eseguito in un thread separato in background
+                return dao.removeTrackFromPlaylist(playlistId, trackId);
+            }
+        };
+
+        //Comportamento in caso di successo (Eseguito automaticamente sul thread della UI)
+        removeTask.setOnSucceeded(event -> {
+            boolean isRemoved = removeTask.getValue();
+            if (isRemoved) {
+                this.state = EVENT_TRACK_REMOVED_FROM_PLAYLIST_PREFIX + playlistId;
+                System.out.println("PlaylistManager [Async]: Traccia " + trackId + " rimossa dalla playlist " + playlistId + ". Emetto notifica...");
+                notifyObservers();
+            } else {
+                System.err.println("PlaylistManager [Async]: Nessuna associazione trovata da rimuovere.");
+            }
+        });
+
+        //Comportamento in caso di errore
+        removeTask.setOnFailed(event -> {
+            System.err.println("PlaylistManager [Async] Errore di Sistema: Impossibile rimuovere la traccia.");
+            removeTask.getException().printStackTrace();
+        });
+
+        //Avvio effettivo del thread
+        Thread backgroundThread = new Thread(removeTask);
+        backgroundThread.setDaemon(true); // Permette all'applicazione di chiudersi anche se il thread è in esecuzione
+        backgroundThread.start();
     }
 
     // --- Implementazione dei metodi dell'interfaccia Subject ---
