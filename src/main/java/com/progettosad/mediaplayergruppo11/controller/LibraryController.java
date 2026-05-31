@@ -29,15 +29,17 @@ import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
 import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.model.player.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
+import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_UPDATED;
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_DELETED;
+import com.progettosad.mediaplayergruppo11.utils.TimeUtils;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.scene.control.ProgressBar;
 
 
 /**
@@ -74,9 +76,29 @@ public class LibraryController implements Initializable, Observer{
     @FXML 
     private Button homeButton; 
     
-    
     @FXML 
     private Button addTrackButton;
+    
+    // TASK T-06/03: Riferimenti FXML per la barra del Player in basso
+    
+    
+    @FXML 
+    private Label currentTrackTitle;
+    
+    @FXML 
+    private Label currentTrackArtist;
+        
+    @FXML 
+    private ProgressBar playerProgressBar;
+    
+    @FXML 
+    private Button playerButton;
+    
+    @FXML 
+    private Label currentTrackTime;
+    
+    @FXML 
+    private Label currentTrackDuration;
     
     public LibraryController() {
         this.subject = TrackManager.getInstance();
@@ -128,6 +150,47 @@ public class LibraryController implements Initializable, Observer{
         
         // TASK T-13/03: Popolamento iniziale di Playlist e Tracce (in background)
         setupContextMenu();
+        
+        // TASK T-06/03: Gestione della BottomBar
+        PlaybackEngine engine = PlaybackEngine.getInstance();
+
+        if (playerProgressBar != null) {
+            playerProgressBar.progressProperty().bind(engine.progressProperty());
+        }
+        
+        // Aggiornamento dei metadati (titolo, tempi, artista ecc...) in caso di cambio del brano
+        engine.currentTrackProperty().addListener((observable, oldTrack, newTrack) -> {
+            Platform.runLater(() -> {
+                if (newTrack != null) {
+                    if (currentTrackTitle != null) currentTrackTitle.setText(newTrack.getTitle());
+                    if (currentTrackArtist != null) currentTrackArtist.setText(newTrack.getArtist());
+                }
+                if (currentTrackDuration != null) {
+                        currentTrackDuration.setText(newTrack.getFormattedLength());
+                    }
+            });
+        });
+        
+        // Aggiornamento ogni secondo della Label di tracking del brano in riproduzione
+        engine.currentTimeProperty().addListener((observable, oldTime, newTime) -> {
+            Platform.runLater(() -> {
+                if (currentTrackTime != null) {
+                    // Formattiamo il valore intero "15" nella stringa "00:15"
+                    currentTrackTime.setText(TimeUtils.formatSecondsToMinutes(newTime.intValue()));
+                }
+            });
+        });
+        
+        // 
+        engine.isPlayingProperty().addListener((observable, oldValue, isPlaying) -> {
+            Platform.runLater(() -> {
+                if (playerButton != null) {
+                    // Imposta il simbolo di Pausa o Play (puoi sostituirlo con setGraphic se usi un'ImageView in FXML)
+                    playerButton.setText(isPlaying ? "⏸" : "▶");
+                }
+            });
+        });
+        
         loadPlaylistsAsync();
         loadLibraryAsync();
     }
@@ -152,8 +215,6 @@ public class LibraryController implements Initializable, Observer{
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 2 && (!row.isEmpty())) {
                     Track selectedTrack = row.getItem();
-                    // ATTENZIONE: Qui passi la lista attualmente visibile. 
-                    // In futuro dovrai aggiornare PlaybackEngine per istanziare l'Iteratore della Coda (T-08/01)
                     PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
                 }
             });
@@ -187,29 +248,31 @@ public class LibraryController implements Initializable, Observer{
     
     
     /**
-     * Inoltra la richiesta di riproduzione al motore di playback.
-     * Mantiene il Controller passivo delegando il controllo dello stato (es. libreria vuota) 
-     * al Modello; intercetta eventuali eccezioni di dominio per fornire un feedback visivo all'utente.
+     * TASK T-06/03: Questo metodo gestisce l'azione sul pulsante centrale della barra.
+     * Funziona come un interruttore (Toggle) tra Play e Pausa.
      */
     @FXML
-    private void handlePlay(){
-        Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
-        try {
-            PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
-        } catch(IllegalStateException e) {
-            AlertUtils.show(Alert.AlertType.WARNING, "Libreria Vuota", e.getMessage());
+    private void handlePlayPause(){
+        PlaybackEngine engine = PlaybackEngine.getInstance();
+        if (engine.isPlayingProperty().get()) {
+            // Se sta suonando, metti in pausa
+            engine.pauseTrack();
+        } else {
+            // Se è in pausa, e abbiamo un brano in memoria, riprendi
+            if (engine.currentTrackProperty().get() != null) {
+                engine.playTrack(engine.currentTrackProperty().get());
+            } else {
+                // Altrimenti, preleva la selezione dalla tabella e avvia
+                Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
+                try {
+                    engine.playSelection(selectedTrack, trackTableView.getItems());
+                } catch(IllegalStateException e) {
+                    AlertUtils.show(Alert.AlertType.WARNING, "Libreria Vuota", e.getMessage());
+                }
+            }
         }
     }
-    
-    /**
-     * Delega l'interruzione temporanea della riproduzione al PlaybackEngine.
-     * Il rispetto del pattern Passive View impone che il Controller non mantenga
-     * traccia dello stato in esecuzione.
-     */
-    @FXML
-    private void handlePause() {
-        PlaybackEngine.getInstance().pauseTrack();
-    }
+   
 
     /**
      * Delega l'arresto definitivo della riproduzione al PlaybackEngine,

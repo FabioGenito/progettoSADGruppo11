@@ -13,7 +13,7 @@
 
 package com.progettosad.mediaplayergruppo11.model.states;
 
-import com.progettosad.mediaplayergruppo11.model.player.PlaybackEngine;
+import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 
 public interface PlayerState {
     void play(PlaybackEngine context);
