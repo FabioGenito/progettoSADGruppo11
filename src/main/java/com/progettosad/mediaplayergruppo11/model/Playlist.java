@@ -12,6 +12,9 @@ public class Playlist {
     private int id;
     private String name;
     private String image;
+    
+    // Costruttore vuoto necessario per la Reflection e i Test
+    public Playlist() {}
 
     public Playlist(int id, String name, String image) {
         this.id = id;
