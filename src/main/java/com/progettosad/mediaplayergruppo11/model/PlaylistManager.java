@@ -1,5 +1,6 @@
 package com.progettosad.mediaplayergruppo11.model;
 
+import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
@@ -36,7 +37,7 @@ public class PlaylistManager implements Subject {
     /**
      * Coordina l'aggiunta di una traccia a una playlist, gestendo le eccezioni
      * e notificando gli Observer in caso di successo.
-     * * @param playlistId L'ID della playlist di destinazione
+     * @param playlistId L'ID della playlist di destinazione
      * @param trackId L'ID della traccia da aggiungere
      */
     public void addTrackToPlaylist(int playlistId, int trackId) {
@@ -117,6 +118,24 @@ public class PlaylistManager implements Subject {
         } catch (RuntimeException e) {
             System.err.println("PlaylistManager Errore: Impossibile recuperare le playlist.");
             e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Recupera le tracce associate a una specifica playlist delegando al DAO.
+     * Gestisce i potenziali errori di sistema per proteggere la UI.
+     * @param playlistId L'ID della playlist da esplorare
+     * @return Una lista di oggetti Track, oppure una lista vuota in caso di errore.
+     */
+    public List<Track> getTracksByPlaylist(int playlistId) {
+        try {
+            // Delega l'operazione di lettura al livello Dati
+            return dao.getTracksByPlaylist(playlistId);
+        } catch (RuntimeException e) {
+            System.err.println("PlaylistManager Errore: Impossibile recuperare le tracce per la playlist " + playlistId);
+            e.printStackTrace();
+            // Ritorna una lista vuota sicura per evitare NullPointerException nei componenti grafici
             return new ArrayList<>();
         }
     }

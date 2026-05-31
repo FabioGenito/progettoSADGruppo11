@@ -17,27 +17,27 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
- import javafx.concurrent.Task;
 import java.util.List;
+import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableRow;
+
 
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
-import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
+import com.progettosad.mediaplayergruppo11.observer.Observer;
+import com.progettosad.mediaplayergruppo11.model.player.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
 
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_UPDATED;
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_DELETED;
 
-
-
 import java.net.URL;
 import java.util.ResourceBundle;
-import javafx.concurrent.Task;
-import javafx.scene.control.Label;
 
 
 /**
@@ -49,6 +49,7 @@ import javafx.scene.control.Label;
 public class LibraryController implements Initializable, Observer{
 
     private TrackManager subject;
+    
     @FXML
     private ListView<Playlist> playlistListView;
 
@@ -69,6 +70,9 @@ public class LibraryController implements Initializable, Observer{
 
     @FXML
     private TableColumn<Track, String> colDurata;
+    
+    @FXML 
+    private Button homeButton; 
     
     
     @FXML 
@@ -107,9 +111,54 @@ public class LibraryController implements Initializable, Observer{
         
         addTrackButton.setOnAction(event -> openTrackForm(null));
         trackTableView.setPlaceholder(new Label("Nessun brano presente"));
+        
+        // TASK T-13/03: Listener sulla ListView delle playlist
+        setupPlaylistSelectionListener();
+
+        // TASK T-13/03: Evento Doppio Click sulla TableView
+        setupDoubleClickEvent();
+
+        // TASK T-13/03: Pulsante Home ("Tutti i brani") per rimuovere i filtri
+        if (homeButton != null) {
+            homeButton.setOnAction(event -> {
+                playlistListView.getSelectionModel().clearSelection(); // Deseleziona la playlist
+                loadLibraryAsync(); // Ricarica tutta la libreria
+            });
+        }
+        
+        // TASK T-13/03: Popolamento iniziale di Playlist e Tracce (in background)
         setupContextMenu();
+        loadPlaylistsAsync();
         loadLibraryAsync();
-        loadInitialDataAsync();
+    }
+    
+    /**
+     * TASK T-13/03: Listener per caricare le tracce filtrate al click su una Playlist.
+     */
+    private void setupPlaylistSelectionListener() {
+        playlistListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                loadTracksByPlaylistAsync(newValue.getId());
+            }
+        });
+    }
+
+    /**
+     * TASK T-13/03: Configurazione Doppio Clic sulla TableView per la riproduzione.
+     */
+    private void setupDoubleClickEvent() {
+        trackTableView.setRowFactory(tv -> {
+            TableRow<Track> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    Track selectedTrack = row.getItem();
+                    // ATTENZIONE: Qui passi la lista attualmente visibile. 
+                    // In futuro dovrai aggiornare PlaybackEngine per istanziare l'Iteratore della Coda (T-08/01)
+                    PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
+                }
+            });
+            return row;
+        });
     }
     
     /**
@@ -122,7 +171,7 @@ public class LibraryController implements Initializable, Observer{
             Parent root = loader.load();
 
             if (trackToEdit != null) {
-                InsertTrackController controller = loader.getController();
+                TrackFormController controller = loader.getController();
                 controller.setTrackData(trackToEdit);
             }
 
@@ -255,6 +304,65 @@ public class LibraryController implements Initializable, Observer{
     }
     
     /**
+     * T-13/01: Metodi per caricare Tracce e Playlist in background.
+     * Utilizza un Task per non bloccare il thread di rendering di JavaFX.
+     */
+    
+    /**
+     * Carica tutte le playlist nella barra laterale sinistra.
+     */
+    private void loadPlaylistsAsync() {
+        Task<List<Playlist>> task = new Task<>() {
+            @Override
+            protected List<Playlist> call() throws Exception {
+                return PlaylistManager.getInstance().getAllPlaylists();
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            List<Playlist> playlists = task.getValue();
+            if (playlists != null) {
+                playlistListView.setItems(FXCollections.observableArrayList(playlists));
+            }
+        });
+
+        task.setOnFailed(event -> {
+            AlertUtils.show(Alert.AlertType.ERROR, "Errore Playlist", "Impossibile caricare le playlist dalla base dati.");
+        });
+
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /**
+     * Carica le tracce di una singola playlist.
+     */
+    private void loadTracksByPlaylistAsync(int playlistId) {
+        Task<List<Track>> task = new Task<>() {
+            @Override
+            protected List<Track> call() throws Exception {
+                return PlaylistManager.getInstance().getTracksByPlaylist(playlistId);
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            List<Track> tracks = task.getValue();
+            if (tracks != null) {
+                trackTableView.setItems(FXCollections.observableArrayList(tracks));
+            }
+        });
+
+        task.setOnFailed(event -> {
+            AlertUtils.show(Alert.AlertType.ERROR, "Errore Playlist", "Impossibile caricare le tracce della playlist.");
+        });
+
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
+    }
+    
+    /**
      * T-04/03: Carica inizialmente tutte le tracce dal database in modo asincrono.
      * Utilizza un Task per non bloccare il JavaFX Application Thread.
      */
@@ -277,53 +385,8 @@ public class LibraryController implements Initializable, Observer{
             AlertUtils.show(Alert.AlertType.ERROR, "Errore di Connessione", "Impossibile caricare la libreria.");
         });
 
-        new Thread(loadTask).start();
+        Thread t = new Thread(loadTask);
+        t.setDaemon(true);
+        t.start();
     } 
-
-    /**
-     * T-13/01: Carica simultaneamente Tracce e Playlist in background all'avvio.
-     * Utilizza un Task per non bloccare il thread di rendering di JavaFX.
-     */
-    private void loadInitialDataAsync() {
-        
-        Task<Void> loadDataTask = new Task<Void>() {
-            
-            // Strutture dati temporanee interne al Task
-            // Conservano i dati grezzi estratti da PostgreSQL prima di inietterli nella UI
-            private List<Track> tempTracks;
-            private List<Playlist> tempPlaylists;
-
-            @Override
-            protected Void call() throws Exception {
-                // Interroghiamo i Manager/DAO per ottenere i dati
-                tempTracks = TrackManager.getInstance().getAllTracks();
-                tempPlaylists = PlaylistManager.getInstance().getAllPlaylists();
-                
-                //FASE DI AGGIORNAMENTO UI
-                // Platform.runLater forza l'esecuzione di questo frammento sul thread grafico principale
-                Platform.runLater(() -> {
-                    if (trackTableView != null) {
-                        trackTableView.getItems().setAll(tempTracks);
-                    }
-                    if (playlistListView != null) {
-                        playlistListView.getItems().setAll(tempPlaylists);
-                    }
-                    System.out.println("Tabelle UI aggiornate con successo.");
-                });
-                
-                return null;
-            }
-        };
-
-        // Gestione di eventuali crash di connessione durante l'avvio
-        loadDataTask.setOnFailed(event -> {
-            System.err.println("Errore critico durante il caricamento iniziale dei dati.");
-            loadDataTask.getException().printStackTrace();
-        });
-
-        // Avvio del thread in background (impostato come Daemon per non bloccare la chiusura dell'app)
-        Thread backgroundThread = new Thread(loadDataTask);
-        backgroundThread.setDaemon(true); 
-        backgroundThread.start();
-    }
 }

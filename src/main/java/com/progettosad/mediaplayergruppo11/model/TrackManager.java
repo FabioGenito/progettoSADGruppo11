@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.progettosad.mediaplayergruppo11.model;
+import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
 import com.progettosad.mediaplayergruppo11.observer.Subject;

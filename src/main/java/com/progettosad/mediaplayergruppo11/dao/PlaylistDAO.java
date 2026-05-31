@@ -14,12 +14,6 @@ import java.util.List;
 
 public class PlaylistDAO implements PlaylistDAOInterface {
     
-    
-    /*
-    gestione della parte di inserimento che riguarda SQL
-    !! la playlist è scritta con \ \ perchè sql non è case sensitive e non 
-    riconosce la maiuscola
-    */
     private static final String INSERT_PLAYLIST = "INSERT INTO playlist(name, image) VALUES (?, ?)";
     private static final String SELECT_ALL_PLAYLISTS = "SELECT id, name, image FROM playlist ORDER BY id ASC";
     /**

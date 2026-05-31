@@ -32,7 +32,7 @@ import java.util.ResourceBundle;
  * Implementa la validazione grafica real-time e delega l'operazione I/O
  * a un thread separato (Task) per preservare la reattività della UI.
  */
-public class InsertTrackController implements Initializable {
+public class TrackFormController implements Initializable {
 
     @FXML private TextField titleField;
     @FXML private TextField artistField;
