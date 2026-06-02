@@ -19,6 +19,7 @@ import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
  import javafx.concurrent.Task;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
@@ -27,6 +28,9 @@ import com.progettosad.mediaplayergruppo11.observer.Observer;
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
+
+import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
+import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_UPDATED;
@@ -38,6 +42,7 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.concurrent.Task;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 
 
 /**
@@ -47,8 +52,9 @@ import javafx.scene.control.Label;
  * * @author Fabio e irene
  */
 public class LibraryController implements Initializable, Observer{
-
+    
     private TrackManager subject;
+    private Playlist currentOpenPlaylist=null;
     @FXML
     private ListView<Playlist> playlistListView;
 
@@ -87,6 +93,8 @@ public class LibraryController implements Initializable, Observer{
         colAlbum.setCellValueFactory(new PropertyValueFactory<>("album"));
         colDurata.setCellValueFactory(new PropertyValueFactory<>("formattedLength"));
         colDurata.setStyle("-fx-alignment: CENTER_RIGHT");
+        
+        setupContextMenu();
         
         /* * Generazione automatica dell'indice di riga:
          * La colonna non è legata a un attributo del Modello, ma sfrutta 
@@ -137,7 +145,8 @@ public class LibraryController implements Initializable, Observer{
     }
     
     
-    /**
+    /** t-06/01
+     * T-06/02
      * Inoltra la richiesta di riproduzione al motore di playback.
      * Mantiene il Controller passivo delegando il controllo dello stato (es. libreria vuota) 
      * al Modello; intercetta eventuali eccezioni di dominio per fornire un feedback visivo all'utente.
@@ -152,7 +161,7 @@ public class LibraryController implements Initializable, Observer{
         }
     }
     
-    /**
+    /** T- 06/01
      * Delega l'interruzione temporanea della riproduzione al PlaybackEngine.
      * Il rispetto del pattern Passive View impone che il Controller non mantenga
      * traccia dello stato in esecuzione.
@@ -162,7 +171,7 @@ public class LibraryController implements Initializable, Observer{
         PlaybackEngine.getInstance().pauseTrack();
     }
 
-    /**
+    /** T-06/01
      * Delega l'arresto definitivo della riproduzione al PlaybackEngine,
      * reimpostando il ciclo di vita del brano a livello di Modello.
      */
@@ -177,11 +186,43 @@ public class LibraryController implements Initializable, Observer{
      * La View non viene forzata ad aggiornarsi qui, prevenendo disallineamenti: l'aggiornamento
      * visivo avverrà solo a valle, tramite la notifica dell'Observer.
      */
+    
     private void setupContextMenu() {
         if(trackTableView == null) return;
 
         ContextMenu contextMenu = new ContextMenu();
         
+        //T-09/02. Configura il menu contestuale per la tabella dei brani, aggiungendo
+        //il popolamento dinamico per l'aggiunta ad una playlist
+        
+        Menu addToPlaylistMenu = new Menu("Aggiungi a playlist...");
+
+        // Popolamento dinamico: interroga il backend solo quando l'utente apre la tendina
+        addToPlaylistMenu.setOnShowing(e -> {
+            addToPlaylistMenu.getItems().clear();
+            
+            // Task asincrono per non bloccare la UI durante la query
+            CompletableFuture.supplyAsync(() -> {
+                PlaylistDAO dao = new PlaylistDAO();
+                return dao.getAllPlaylists();
+            }).thenAccept(playlists -> {
+                Platform.runLater(() -> {
+                    if (playlists.isEmpty()) {
+                        MenuItem emptyItem = new MenuItem("Nessuna playlist disponibile");
+                        emptyItem.setDisable(true);
+                        addToPlaylistMenu.getItems().add(emptyItem);
+                    } else {
+                        // Creazione dinamica delle voci del sottomenu
+                        for (Playlist p : playlists) {
+                            MenuItem item = new MenuItem(p.getName());
+                            // Al click, invoca il metodo passando l'ID della playlist e demandando il salvataggio
+                            item.setOnAction(event -> handleAddTrackToPlaylist(p.getId()));
+                            addToPlaylistMenu.getItems().add(item);
+                        }
+                    }
+                });
+            });
+        });
         MenuItem editItem = new MenuItem("Modifica Traccia");
         editItem.setOnAction(event -> {
             Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
@@ -189,7 +230,7 @@ public class LibraryController implements Initializable, Observer{
                 openTrackForm(selectedTrack); 
             }
         });
-
+        // TASK T-02/03: Componenti UI e Dialog di Conferma  
         MenuItem deleteItem = new MenuItem("Elimina Traccia");
         deleteItem.setOnAction(event -> {
             Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
@@ -207,10 +248,97 @@ public class LibraryController implements Initializable, Observer{
             }
         });
         
-        contextMenu.getItems().addAll(editItem, deleteItem);
+       // T-10/02: Voce "Rimuovi da questa playlist"
+        MenuItem removeFromPlaylistItem = new MenuItem("Rimuovi da questa playlist");
+        removeFromPlaylistItem.setOnAction(event -> handleRemoveTrackFromPlaylist());
+
+        contextMenu.setOnShowing(event -> {
+            contextMenu.getItems().clear();
+            if (currentOpenPlaylist == null) {
+                // Se siamo nella libreria generale: mostra Aggiungi, Modifica, Elimina
+                contextMenu.getItems().addAll(addToPlaylistMenu, editItem, deleteItem);
+            } else {
+                // Se siamo in una playlist specifica: mostra solo Rimuovi
+                contextMenu.getItems().addAll(removeFromPlaylistItem);
+            }
+        });
+        
         trackTableView.setContextMenu(contextMenu);
     }
+    
+    /**
+     * T-09/02
+     * Gestisce l'aggiunta di una traccia ad una specifica playlist.
+     */
 
+    private void handleAddTrackToPlaylist(int playlistId) {
+        Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
+        if (selectedTrack == null) return;
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                PlaylistDAO dao = new PlaylistDAO();
+                // Invocazione del backend passando gli ID estratti
+                boolean success = dao.addTrackToPlaylist(playlistId, selectedTrack.getId());
+
+                if (success) {
+                    Platform.runLater(() -> {
+                        AlertUtils.show(Alert.AlertType.INFORMATION, "Operazione completata", "Brano aggiunto alla playlist con successo!");
+                    });
+                    
+                    // TASK 9/03: Lancio evento Observer 
+                    // Generiamo una stringa di stato che contiene l'azione e l'ID della playlist
+                    if (subject instanceof com.progettosad.mediaplayergruppo11.model.TrackManager) {
+                        ((com.progettosad.mediaplayergruppo11.model.TrackManager) subject).setState("ADDED_TO_PLAYLIST_" + playlistId);
+                    }
+                }
+            } catch (TrackAlreadyInPlaylistException ex) {
+                // Cattura l'eccezione custom (Brano già presente) e mostra Alert ERROR
+                Platform.runLater(() -> {
+                    AlertUtils.show(Alert.AlertType.ERROR, "Errore di inserimento", "Il brano è già presente in questa playlist.");
+                });
+            } catch (Exception ex) {
+                // Cattura eventuali altri errori di connessione o SQL
+                Platform.runLater(() -> {
+                    AlertUtils.show(Alert.AlertType.ERROR, "Errore di sistema", "Impossibile aggiungere il brano: " + ex.getMessage());
+                });
+            }
+        });
+    }
+    
+    /**
+     * T-10/02 e T-10/03
+     * Gestisce la rimozione asincrona del brano dalla playlist corrente.
+     */
+    private void handleRemoveTrackFromPlaylist() {
+        Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
+        if (selectedTrack == null || currentOpenPlaylist == null) return;
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                PlaylistDAO dao = new PlaylistDAO();
+                boolean success = dao.removeTrackFromPlaylist(currentOpenPlaylist.getId(), selectedTrack.getId());
+
+                if (success) {
+                    Platform.runLater(() -> {
+                        // T-10/03: Rimozione istantanea visiva dalla ObservableList
+                        trackTableView.getItems().remove(selectedTrack);
+                        AlertUtils.show(Alert.AlertType.INFORMATION, "Rimozione completata", "Traccia rimossa dalla playlist con successo!");
+                    });
+                    
+                    // T-10/03: Lancio evento tramite l'Observer Pattern del progetto
+                    if (subject instanceof com.progettosad.mediaplayergruppo11.model.TrackManager) {
+                        ((com.progettosad.mediaplayergruppo11.model.TrackManager) subject).setState("REMOVED_FROM_PLAYLIST_" + currentOpenPlaylist.getId());
+                    }
+                }
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    AlertUtils.show(Alert.AlertType.ERROR, "Errore", "Impossibile rimuovere il brano: " + ex.getMessage());
+                });
+            }
+        });
+    }
+    
     /**
      * Implementazione del contratto Observer. 
      * Reagisce alle variazioni di stato notificate dal TrackManager, filtrando gli eventi 
@@ -220,7 +348,7 @@ public class LibraryController implements Initializable, Observer{
     @Override
     public void update() {
         String stato = subject.getState();
-        
+        //T-02/04: Sicronizzazione dell'interfaccia in tempo reale 
         if (stato != null) {
             if (stato.startsWith(EVENT_TRACK_DELETED)) {
                 int deletedId = Integer.parseInt(stato.split("_")[2]);
@@ -250,6 +378,27 @@ public class LibraryController implements Initializable, Observer{
                         trackTableView.sort(); 
                     }
                 });
+            }
+            
+            // TASK 9/03: Ricezione evento Observer per aggiunta a Playlist 
+            if (stato.startsWith("ADDED_TO_PLAYLIST_")) {
+                int targetPlaylistId = Integer.parseInt(stato.split("_")[3]);
+                
+                // Controlliamo se la schermata attualmente aperta è proprio quella della playlist aggiornata
+                if (currentOpenPlaylist != null && currentOpenPlaylist.getId() == targetPlaylistId) {
+                    
+                    // Ricarichiamo asincronamente la lista dei brani di quella playlist e aggiorniamo la tabella
+                    java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                        com.progettosad.mediaplayergruppo11.dao.PlaylistDAO dao = new com.progettosad.mediaplayergruppo11.dao.PlaylistDAO();
+                        return dao.getTracksByPlaylist(targetPlaylistId);
+                    }).thenAccept(updatedTracks -> {
+                        Platform.runLater(() -> {
+                            if (trackTableView != null) {
+                                trackTableView.getItems().setAll(updatedTracks);
+                            }
+                        });
+                    });
+                }
             }
         }
     }

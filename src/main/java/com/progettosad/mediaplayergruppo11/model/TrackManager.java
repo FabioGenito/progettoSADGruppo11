@@ -145,4 +145,13 @@ public class TrackManager implements Subject{
             return new ArrayList<>();
         }
     }
+    
+    /**
+     * T-09/03
+     * Aggiorna lo stato del Subject e notifica a tutti gli observer in ascolto
+     */
+    public void setState(String newState){
+        this.state=newState;
+        notifyObservers();
+    }
 }
