@@ -9,21 +9,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * Verifica l'istanziazione e l'override dei metodi standard.
  */
 class PlaylistTest {
-
+    
+    private static final int MOCK_ID = 5;
+    private static final String MOCK_NAME = "Indie Mix";
+    private static final String MOCK_IMAGE = "indie.png";
+    
     @Test
     @DisplayName("Il costruttore parametrizzato dovrebbe inizializzare correttamente i campi")
     void testParameterizedConstructor() {
-        
-        int id = 1;
-        String name = "Rock Classics";
-        String image = "rock_cover.png";
+      
+        Playlist playlist = new Playlist(MOCK_ID, MOCK_NAME, MOCK_IMAGE);
 
-        Playlist playlist = new Playlist(id, name, image);
-
-        
-        assertEquals(id, playlist.getId());
-        assertEquals(name, playlist.getName());
-        assertEquals(image, playlist.getImage());
+        assertEquals(MOCK_ID, playlist.getId());
+        assertEquals(MOCK_NAME, playlist.getName());
+        assertEquals(MOCK_IMAGE, playlist.getImage());
     }
 
     @Test
@@ -45,7 +44,7 @@ class PlaylistTest {
     @DisplayName("Il metodo toString dovrebbe restituire esclusivamente il nome della playlist per la UI")
     void testToStringOverride() {
         
-        Playlist playlist = new Playlist(5, "Indie Mix", "indie.png");
+        Playlist playlist = new Playlist(MOCK_ID, MOCK_NAME, MOCK_IMAGE);
 
         String stringRepresentation = playlist.toString();
 

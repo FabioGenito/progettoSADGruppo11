@@ -13,7 +13,6 @@ public class Playlist {
     private String name;
     private String image;
     
-    // Costruttore vuoto necessario per la Reflection e i Test
     public Playlist() {}
 
     public Playlist(int id, String name, String image) {
@@ -46,9 +45,6 @@ public class Playlist {
         this.image = image;
     }
     
-    /**
-     * Mostrare il nome della playlist a schermo.
-     */
     @Override
     public String toString() {
         return this.name;

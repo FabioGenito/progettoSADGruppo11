@@ -19,10 +19,8 @@ public class Track {
     private String genre;
     private String image;
 
-    // Costruttore vuoto per gli oggetti che verrano instanziati tramite Refletion
     public Track() {}
 
-    // Costruttore
     public Track(String title, String artist, int length,String album, int publicationYear,String genre,String image) {
         this.title = title;
         this.artist = artist;
@@ -33,7 +31,6 @@ public class Track {
         this.image=image;
     }
 
-    // Getter e Setter 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 

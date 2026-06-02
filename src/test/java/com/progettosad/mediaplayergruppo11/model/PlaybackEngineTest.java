@@ -23,14 +23,13 @@ class PlaybackEngineTest {
         try {
             Platform.startup(() -> {});
         } catch (IllegalStateException e) {
-            // Il toolkit è già stato avviato, possiamo ignorare l'eccezione
         }
     }
 
     /**
      * Resetta il Singleton prima di ogni test.
      * PlaybackEngine è un Singleton, e per garantire il principio di Isolamento dei Test
-     * dovevo distruggere l'istanza tra un test e l'altro.
+     * è necessario distruggere l'istanza tra un test e l'altro.
      */
     @BeforeEach
     void resetSingleton() throws Exception {
