@@ -4,11 +4,22 @@
  */
 package com.progettosad.mediaplayergruppo11.model;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
+import com.progettosad.mediaplayergruppo11.model.states.PlayerState;
+import com.progettosad.mediaplayergruppo11.model.states.StoppedState;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 import java.util.concurrent.CompletableFuture;
+
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 
 /**
  *
@@ -23,8 +34,18 @@ public class PlaybackEngine {
     private PlayerState currentState;
     private Track currentTrack;
     private Timeline timeline;
-    private int currentTime=0;
     private int totalTime=0;
+    
+    // TASK T-06/03: Proprietà esposte per il Binding con l'interfaccia
+    private final DoubleProperty progressProperty = new SimpleDoubleProperty(0.0);
+    private final ObjectProperty<Track> currentTrackProperty = new SimpleObjectProperty<>(null);
+    private final BooleanProperty isPlayingProperty = new SimpleBooleanProperty(false);
+    private final IntegerProperty currentTimeProperty = new SimpleIntegerProperty(0);
+    
+    public IntegerProperty currentTimeProperty() { return currentTimeProperty; }
+    public DoubleProperty progressProperty() { return progressProperty; }
+    public ObjectProperty<Track> currentTrackProperty() { return currentTrackProperty; }
+    public BooleanProperty isPlayingProperty() { return isPlayingProperty; }
     
     //costruttore privato per inizializzare la Timeline
     //configurandola per aggiornare il tempo logico ogni secondo
@@ -32,13 +53,18 @@ public class PlaybackEngine {
         this.currentState=new StoppedState();
        
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
-        currentTime++;
-        System.out.println("Tempo: "+ currentTime + "/" + totalTime);
-        if (currentTime >= totalTime){
-            stopTrack();
-        }
-    }));
-    timeline.setCycleCount(Timeline.INDEFINITE);
+            int current = currentTimeProperty.get() + 1;
+            currentTimeProperty.set(current);        
+            // TASK T-06/03: Aggiorna la proprietà in tempo reale (da 0.0 a 1.0 per la ProgressBar)
+            if (totalTime > 0) {
+                progressProperty.set((double) current / totalTime);
+            }
+            
+            if (current >= totalTime){
+                stopTrack();
+            }
+        }));
+        timeline.setCycleCount(Timeline.INDEFINITE);
     }
     
     public static synchronized PlaybackEngine getInstance(){
@@ -55,8 +81,9 @@ public class PlaybackEngine {
             return;
         
         //verifica se si richiede di riprendere il prano precedentemente messo in pausa
-        if (currentTrack != null && currentTrack.getId()==track.getId()){
+        if (currentTrack != null && currentTrack.getId() == track.getId()){
             currentState.play(this);
+            isPlayingProperty.set(true);
             return;
         }
         
@@ -66,10 +93,15 @@ public class PlaybackEngine {
         }
         this.currentTrack=track;
         this.totalTime=track.getLength();
-        currentState.play(this);
         
-        //Tracciamento ascolti in backgrount
-        //evita il blocco della UI
+        // TASK T-06/03: Reset della barra e aggiornamento metadati
+        this.currentTimeProperty.set(0);
+        this.progressProperty.set(0.0); 
+        this.currentTrackProperty.set(track);
+
+        currentState.play(this);
+        isPlayingProperty.set(true);
+        
         CompletableFuture.runAsync(()->{
            TrackDAO dao = new TrackDAO();
            dao.incrementPlayCount(track.getId());
@@ -78,10 +110,14 @@ public class PlaybackEngine {
     
     public void pauseTrack(){
         currentState.pause(this);
+        isPlayingProperty.set(false);
     }
     
     public void stopTrack(){
         currentState.stop(this);
+        isPlayingProperty.set(false);
+        progressProperty.set(0.0);
+        currentTimeProperty.set(0);
     }
     
     public PlayerState getCurrentState(){
@@ -97,7 +133,7 @@ public class PlaybackEngine {
     }
     
     public void setCurrentTime(int t){
-        this.currentTime=t;
+        this.currentTimeProperty.set(t);
     }
     
     /**

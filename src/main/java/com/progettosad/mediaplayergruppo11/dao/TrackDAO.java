@@ -20,6 +20,12 @@ import java.util.List;
 
 public class TrackDAO implements TrackDAOInterface {
 
+    private static final String INSERT_TRACK = "INSERT INTO tracks (title, artist, length, album, publication_year, genre, image) VALUES (?,?,?,?,?,?,?)";
+    private static final String DELETE_TRACK = "DELETE FROM tracks WHERE id = ?";
+    private static final String INCREMENT_PLAY_COUNT = "UPDATE tracks SET play_count = play_count + 1 WHERE id = ?";
+    private static final String UPDATE_TRACK = "UPDATE tracks SET title = ?, artist = ?, length = ?, album = ?, publication_year = ?, genre = ?, image = ? WHERE id = ?";
+    private static final String SELECT_ALL_TRACKS = "SELECT * FROM Tracks ORDER BY title ASC";
+    
     /**
      * Inserisce un oggetto Track nel database PostgreSQL.
      * * @param track L'oggetto Track da inserire
@@ -28,8 +34,6 @@ public class TrackDAO implements TrackDAOInterface {
      */
     @Override
     public Track insertTrack(Track track) {
-        
-        //Validazione dei dati
         if (track == null || 
             track.getTitle() == null || track.getTitle().trim().isEmpty() || 
             track.getArtist() == null || track.getArtist().trim().isEmpty()) {
@@ -37,14 +41,9 @@ public class TrackDAO implements TrackDAOInterface {
             throw new IllegalArgumentException("Il titolo e l'autore non possono essere vuoti o nulli.");
         }
         
-        String sql = "INSERT INTO tracks (title, artist,length, album, publication_year, genre, image) VALUES (?,?,?,?,?,?,?)";
-
-        //Gestione della connessione e dello statement con try-with-resources
-        //Statement.RETURN_GENERATED_KEYS recupera l'ID autogenerato da PostgreSQL
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmt = conn.prepareStatement(INSERT_TRACK, Statement.RETURN_GENERATED_KEYS)) {
 
-            // Impostazione dei parametri
             pstmt.setString(1, track.getTitle());
             pstmt.setString(2, track.getArtist());
             pstmt.setInt(3, track.getLength());
@@ -53,10 +52,8 @@ public class TrackDAO implements TrackDAOInterface {
             pstmt.setString(6, track.getGenre());
             pstmt.setString(7, track.getImage());
             
-            // Esecuzione della query
             int affectedRows = pstmt.executeUpdate();
 
-            //Recupero dell'ID generato 
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
@@ -72,7 +69,7 @@ public class TrackDAO implements TrackDAOInterface {
 
         return track;
     }
-    
+
     /**
      * Elimina una traccia dal database utilizzando una transazione esplicita.
      * Notifica gli observer in caso di successo.
@@ -81,21 +78,17 @@ public class TrackDAO implements TrackDAOInterface {
      */
     @Override
     public boolean deleteTrack(int trackId) {
-        String sql = "DELETE FROM tracks WHERE id = ?";
         boolean success = false;
 
-        // Otteniamo la connessione nel blocco try-with-resources principale
         try (Connection conn = DatabaseManager.getConnection()) {
-            
-            //Disabilitiamo l'autocommit per iniziare la transazione manuale
+            // Disabilitazione autocommit per gestire esplicitamente la transazione atomica
             conn.setAutoCommit(false);
 
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (PreparedStatement pstmt = conn.prepareStatement(DELETE_TRACK)) {
                 pstmt.setInt(1, trackId);
-                
                 int affectedRows = pstmt.executeUpdate();
 
-                if (affectedRows > 0){
+                if (affectedRows > 0) {
                     conn.commit();
                     success = true;
                 } else {
@@ -104,12 +97,9 @@ public class TrackDAO implements TrackDAOInterface {
                 }
 
             } catch (SQLException e) {
-                //Errore: effettuiamo il rollback per annullare qualsiasi modifica parziale
                 conn.rollback();
                 throw new RuntimeException("Errore SQL durante l'eliminazione. Transazione annullata tramite rollback.", e);
             } finally {
-                //Ripristiniamo l'autocommit allo stato originale 
-                //prima che la connessione venga chiusa o restituita al pool di connessioni
                 conn.setAutoCommit(true);
             }
 
@@ -119,15 +109,15 @@ public class TrackDAO implements TrackDAOInterface {
 
         return success;
     }
+    
     //incremento del contatore delle riproduzione di un brano 
     public void incrementPlayCount(int trackId){
-        String sql = "UPDATE tracks SET play_count=play_count + 1 WHERE id =?";
-        try(Connection conn=DatabaseManager.getConnection();
-                PreparedStatement pstmt=conn.prepareStatement(sql)){
-            pstmt.setInt(1,trackId);
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(INCREMENT_PLAY_COUNT)) {
+            pstmt.setInt(1, trackId);
             pstmt.executeUpdate();
             System.out.println("Contatore ascolti aggiornato per la traccia: " + trackId);
-        }catch (SQLException e){
+        } catch (SQLException e) {
             System.err.println("Errore nell'aggiornamento ascolti: " + e.getMessage());
         }
     }
@@ -141,8 +131,6 @@ public class TrackDAO implements TrackDAOInterface {
      */
     @Override
     public boolean updateTrack(Track track) {
-        
-        //Validazione dei dati
         if (track == null || 
             track.getId() <= 0 || 
             track.getTitle() == null || track.getTitle().trim().isEmpty() || 
@@ -151,14 +139,9 @@ public class TrackDAO implements TrackDAOInterface {
             throw new IllegalArgumentException("Dati non validi: ID, titolo e artista sono obbligatori per l'aggiornamento.");
         }
 
-        //Definizione della query UPDATE
-        String sql = "UPDATE tracks SET title = ?, artist = ?, length = ?, album = ?, publication_year = ?, genre = ?, image = ? WHERE id = ?";
-
-        //Esecuzione tramite blocco try-with-resources
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(UPDATE_TRACK)) {
 
-            // Mappatura dei parametri
             pstmt.setString(1, track.getTitle());
             pstmt.setString(2, track.getArtist());
             pstmt.setInt(3, track.getLength());
@@ -166,62 +149,48 @@ public class TrackDAO implements TrackDAOInterface {
             pstmt.setInt(5, track.getPublicationYear());
             pstmt.setString(6, track.getGenre());
             pstmt.setString(7, track.getImage());
-            
             pstmt.setInt(8, track.getId());
 
-            //Esecuzione e verifica del risultato
             int affectedRows = pstmt.executeUpdate();
-
-            // Ritorna true SOLO se è stata modificata esattamente una riga
             return affectedRows == 1;
 
         } catch (SQLException e) {
-            // Rilancio dell'eccezione per far gestire l'errore al livello superiore (TrackManager)
             throw new RuntimeException("Errore SQL durante l'aggiornamento della traccia con ID " + track.getId(), e);
         }
     }
     
     /**
- * Estrae l'elenco completo delle tracce presenti nel database, ordinate per titolo.
- * * @return Una lista di oggetti Track ordinati alfabeticamente per titolo.
- * Se non ci sono tracce, restituisce una lista vuota.
- * @throws RuntimeException in caso di errori SQL o di connessione.
- */
+     * Estrae l'elenco completo delle tracce presenti nel database, ordinate per titolo.
+     * * @return Una lista di oggetti Track ordinati alfabeticamente per titolo.
+     * Se non ci sono tracce, restituisce una lista vuota.
+     * @throws RuntimeException in caso di errori SQL o di connessione.
+     */
     @Override
     public List<Track> getAllTracks() {
-    List<Track> trackList = new ArrayList<>();
-    
-    // Query SQL ordinata alfabeticamente per titolo
-    String sql = "SELECT * FROM Tracks ORDER BY title ASC";
+        List<Track> trackList = new ArrayList<>();
+        
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_TRACKS);
+             ResultSet rs = pstmt.executeQuery()) {
 
-    // Try-with-resources per gestire la chiusura automatica di Connessione, Statement e ResultSet
-    try (Connection conn = DatabaseManager.getConnection();
-         PreparedStatement pstmt = conn.prepareStatement(sql);
-         ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                Track track = new Track();
+                track.setId(rs.getInt("id"));
+                track.setTitle(rs.getString("title"));
+                track.setArtist(rs.getString("artist"));
+                track.setLength(rs.getInt("length"));
+                track.setAlbum(rs.getString("album"));
+                track.setPublicationYear(rs.getInt("publication_year"));
+                track.setGenre(rs.getString("genre"));
+                track.setImage(rs.getString("image"));
 
-        // Scorre il ResultSet riga per riga fino all'ultimo record
-        while (rs.next()) {
-            Track track = new Track();
-            
-            // Effettua il mapping esplicito di ogni colonna del DB
-            track.setId(rs.getInt("id"));
-            track.setTitle(rs.getString("title"));
-            track.setArtist(rs.getString("artist"));
-            track.setLength(rs.getInt("length"));
-            track.setAlbum(rs.getString("album"));
-            track.setPublicationYear(rs.getInt("publication_year"));
-            track.setGenre(rs.getString("genre"));
-            track.setImage(rs.getString("image"));
+                trackList.add(track);
+            }
 
-            // Aggiunge la traccia appena mappata alla lista dei risultati
-            trackList.add(track);
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore SQL durante il recupero della lista delle tracce.", e);
         }
 
-    } catch (SQLException e) {
-        // Lancio dell'eccezione verso l'alto per informare il TrackManager
-        throw new RuntimeException("Errore SQL durante il recupero della lista delle tracce.", e);
+        return trackList;
     }
-
-    return trackList;
-}
 }

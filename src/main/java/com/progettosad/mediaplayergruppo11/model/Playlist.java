@@ -12,6 +12,8 @@ public class Playlist {
     private int id;
     private String name;
     private String image;
+    
+    public Playlist() {}
 
     public Playlist(int id, String name, String image) {
         this.id = id;
@@ -43,9 +45,6 @@ public class Playlist {
         this.image = image;
     }
     
-    /**
-     * Mostrare il nome della playlist a schermo.
-     */
     @Override
     public String toString() {
         return this.name;
