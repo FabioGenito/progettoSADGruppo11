@@ -10,8 +10,9 @@ import java.util.List;
 
 /**
  *
- * @author lara
+ * @author Lara
  */
+
 public interface PlaylistDAOInterface {
     Playlist createPlaylist(String name, String image);
     List<Playlist> getAllPlaylists();

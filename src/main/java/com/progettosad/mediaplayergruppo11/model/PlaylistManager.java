@@ -2,6 +2,7 @@ package com.progettosad.mediaplayergruppo11.model;
 
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
+import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
 import com.progettosad.mediaplayergruppo11.observer.Subject;
@@ -11,21 +12,22 @@ import javafx.concurrent.Task;
 
 public class PlaylistManager implements Subject {
 
-    // Costante per identificare univocamente l'evento di modifica di una playlist
     public static final String EVENT_TRACK_ADDED_TO_PLAYLIST_PREFIX = "ADDED_TO_PLAYLIST_";
-    // Costante per identificare univocamente l'evento di rimozione da una playlist
     public static final String EVENT_TRACK_REMOVED_FROM_PLAYLIST_PREFIX = "REMOVED_FROM_PLAYLIST_";
 
     private static PlaylistManager instance;
     private String state;
-    private PlaylistDAO dao;
+    private PlaylistDAOInterface dao;
     private List<Observer> observers = new ArrayList<>();
 
-    // Costruttore privato per il Singleton
     private PlaylistManager() {
         this.dao = new PlaylistDAO();
     }
 
+    public void setDao(PlaylistDAOInterface dao) {
+        this.dao = dao;
+    }
+    
     // pattern Singleton
     public static synchronized PlaylistManager getInstance() {
         if (instance == null) {
@@ -42,27 +44,17 @@ public class PlaylistManager implements Subject {
      */
     public void addTrackToPlaylist(int playlistId, int trackId) {
         try {
-            //Delega l'operazione al livello Dati
             boolean isAdded = dao.addTrackToPlaylist(playlistId, trackId);
 
-            // Se ha successo, aggiorna lo stato e notifica l'interfaccia
             if (isAdded) {
-                // Lo stato contiene l'ID della playlist modificata, così la UI sa cosa aggiornare
                 this.state = EVENT_TRACK_ADDED_TO_PLAYLIST_PREFIX + playlistId;
                 System.out.println("PlaylistManager: Traccia " + trackId + " aggiunta alla playlist " + playlistId + ". Emetto notifica...");
                 notifyObservers();
             }
 
         } catch (TrackAlreadyInPlaylistException e) {
-            // Intercetta l'eccezione personalizzata per i duplicati
             System.err.println("PlaylistManager Avviso: " + e.getMessage());
-            
-            // Nota per te che ti occuperai dell'interfaccia: potresti mostrare 
-            //un messaggio al Controller affinché mostri un Alert()
-            //all'utente ("Brano già presente").
-
         } catch (RuntimeException e) {
-            // Intercetta errori critici
             System.err.println("PlaylistManager Errore di Sistema: Impossibile completare l'operazione.");
             e.printStackTrace();
         }
@@ -74,16 +66,13 @@ public class PlaylistManager implements Subject {
      * @param trackId L'ID della traccia da scollegare
      */
     public void removeTrackFromPlaylistAsync(int playlistId, int trackId) {
-        //Creazione del Task asincrono
         Task<Boolean> removeTask = new Task<Boolean>() {
             @Override
             protected Boolean call() throws Exception {
-                // Questo codice viene eseguito in un thread separato in background
                 return dao.removeTrackFromPlaylist(playlistId, trackId);
             }
         };
 
-        //Comportamento in caso di successo (Eseguito automaticamente sul thread della UI)
         removeTask.setOnSucceeded(event -> {
             boolean isRemoved = removeTask.getValue();
             if (isRemoved) {
@@ -95,13 +84,11 @@ public class PlaylistManager implements Subject {
             }
         });
 
-        //Comportamento in caso di errore
         removeTask.setOnFailed(event -> {
             System.err.println("PlaylistManager [Async] Errore di Sistema: Impossibile rimuovere la traccia.");
             removeTask.getException().printStackTrace();
         });
 
-        //Avvio effettivo del thread
         Thread backgroundThread = new Thread(removeTask);
         backgroundThread.setDaemon(true); // Permette all'applicazione di chiudersi anche se il thread è in esecuzione
         backgroundThread.start();
@@ -130,12 +117,10 @@ public class PlaylistManager implements Subject {
      */
     public List<Track> getTracksByPlaylist(int playlistId) {
         try {
-            // Delega l'operazione di lettura al livello Dati
             return dao.getTracksByPlaylist(playlistId);
         } catch (RuntimeException e) {
             System.err.println("PlaylistManager Errore: Impossibile recuperare le tracce per la playlist " + playlistId);
             e.printStackTrace();
-            // Ritorna una lista vuota sicura per evitare NullPointerException nei componenti grafici
             return new ArrayList<>();
         }
     }
