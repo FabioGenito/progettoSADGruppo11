@@ -180,34 +180,44 @@ public class LibraryController implements Initializable, Observer{
             playerProgressBar.progressProperty().bind(engine.progressProperty());
         }
         
-        // Aggiornamento dei metadati (titolo, tempi, artista ecc...) in caso di cambio del brano
+        Track currentTrack = engine.currentTrackProperty().get();
+        if (currentTrack != null) {
+            if (currentTrackTitle != null) currentTrackTitle.setText(currentTrack.getTitle());
+            if (currentTrackArtist != null) currentTrackArtist.setText(currentTrack.getArtist());
+            if (currentTrackDuration != null) currentTrackDuration.setText(currentTrack.getFormattedLength());
+        } else {
+            if (currentTrackTitle != null) currentTrackTitle.setText("");
+            if (currentTrackArtist != null) currentTrackArtist.setText("");
+            if (currentTrackDuration != null) currentTrackDuration.setText("00:00");
+            if (currentTrackTime != null) currentTrackTime.setText("00:00");
+        }
+        
         engine.currentTrackProperty().addListener((observable, oldTrack, newTrack) -> {
             Platform.runLater(() -> {
                 if (newTrack != null) {
                     if (currentTrackTitle != null) currentTrackTitle.setText(newTrack.getTitle());
                     if (currentTrackArtist != null) currentTrackArtist.setText(newTrack.getArtist());
+                    if (currentTrackDuration != null) currentTrackDuration.setText(newTrack.getFormattedLength());
+                } else {
+                    if (currentTrackTitle != null) currentTrackTitle.setText(""); 
+                    if (currentTrackArtist != null) currentTrackArtist.setText("");
+                    if (currentTrackDuration != null) currentTrackDuration.setText("00:00");
                 }
-                if (currentTrackDuration != null) {
-                        currentTrackDuration.setText(newTrack.getFormattedLength());
-                    }
             });
         });
         
-        // Aggiornamento ogni secondo della Label di tracking del brano in riproduzione
         engine.currentTimeProperty().addListener((observable, oldTime, newTime) -> {
             Platform.runLater(() -> {
                 if (currentTrackTime != null) {
-                    // Formattiamo il valore intero "15" nella stringa "00:15"
                     currentTrackTime.setText(TimeUtils.formatSecondsToMinutes(newTime.intValue()));
                 }
             });
         });
         
-        // 
+        
         engine.isPlayingProperty().addListener((observable, oldValue, isPlaying) -> {
             Platform.runLater(() -> {
                 if (playerButton != null) {
-                    // Imposta il simbolo di Pausa o Play (puoi sostituirlo con setGraphic se usi un'ImageView in FXML)
                     playerButton.setText(isPlaying ? "⏸" : "▶");
                 }
             });
@@ -245,7 +255,7 @@ public class LibraryController implements Initializable, Observer{
         });
     }
     
-    /**
+    /***
      * Metodo centralizzato per aprire il form di traccia.
      * @param trackToEdit se null apre in modalità Inserimento, se valorizzato in modalità Modifica.
      */
@@ -500,18 +510,34 @@ public class LibraryController implements Initializable, Observer{
     @Override
     public void update() {
         String stato = subject.getState();
-        //T-02/04: Sicronizzazione dell'interfaccia in tempo reale 
-        if (stato != null) {
-            if (stato.startsWith(EVENT_TRACK_DELETED)) {
-                int deletedId = Integer.parseInt(stato.split("_")[2]);
-                Platform.runLater(() -> {
-                    if (trackTableView != null) {
-                        trackTableView.getItems().removeIf(track -> track.getId() == deletedId);
-                    }
-                });
+        
+        if (stato != null) {            
+           if (stato.startsWith(EVENT_TRACK_DELETED)) {
+                try {
+                    String numericPart = stato.replaceAll("\\D+", "");
+                    int deletedId = Integer.parseInt(numericPart);
+                    
+                    Platform.runLater(() -> {
+                        if (trackTableView != null) {
+                            Track trackToRemove = null;
+                            for (Track track : trackTableView.getItems()) {
+                                if (track != null && track.getId() == deletedId) {
+                                    trackToRemove = track;
+                                    break; 
+                                }
+                            }                            
+                            if (trackToRemove != null) {
+                                trackTableView.getItems().remove(trackToRemove);
+                                trackTableView.refresh(); 
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    System.err.println("LibraryController Errore: Impossibile leggere l'ID della traccia eliminata.");
+                }
             }
-            // T - 01/03: Gestione Inserimento in tempo reale
-            if (stato.equals(EVENT_TRACK_ADDED)) {
+            
+            else if (stato.equals(EVENT_TRACK_ADDED)) {
                 Track nuovaTraccia = subject.getLastProcessedTrack();
                 if (nuovaTraccia != null) {
                     Platform.runLater(() -> {
@@ -522,10 +548,10 @@ public class LibraryController implements Initializable, Observer{
                     });
                 }
             }
-            if (stato.startsWith(EVENT_TRACK_UPDATED)) {
+            
+            else if (stato.startsWith(EVENT_TRACK_UPDATED)) {
                 Platform.runLater(() -> {
                     if (trackTableView != null) {
-                        // Forza la tabella a ricaricare i dati visivi
                         trackTableView.refresh(); 
                         trackTableView.sort(); 
                     }
