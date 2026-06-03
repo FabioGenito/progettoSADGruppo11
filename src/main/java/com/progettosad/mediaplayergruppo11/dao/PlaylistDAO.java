@@ -69,8 +69,7 @@ public class PlaylistDAO implements PlaylistDAOInterface {
      */
     @Override
     public List<Playlist> getAllPlaylists() {
-        List<Playlist> listaPlaylist = new ArrayList<>();
-        
+        List<Playlist> listaPlaylist = new ArrayList<>();     
         try (
                 Connection connection = DatabaseManager.getConnection();
                 PreparedStatement statement = connection.prepareStatement(SELECT_ALL_PLAYLISTS);
