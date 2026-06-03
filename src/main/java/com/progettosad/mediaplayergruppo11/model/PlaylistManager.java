@@ -150,7 +150,20 @@ public class PlaylistManager implements Subject {
         return state;
     }
     
-    public Playlist createPlaylist(String name, String image){
-        return dao.createPlaylist(name, image);        
+    public Playlist createPlaylist(String name, String image) {
+        try {
+            Playlist newPlaylist = dao.createPlaylist(name, image);
+            
+            System.out.println("PlaylistManager: Playlist '" + name + "' creata con successo (ID: " + newPlaylist.getId() + ").");
+            return newPlaylist;
+
+        } catch (IllegalArgumentException e) {
+            System.err.println("PlaylistManager Avviso di Validazione: " + e.getMessage());
+            throw e; // Rilancia al Controller in modo che possa mostrare l'errore all'utente
+        } catch (RuntimeException e) {
+            System.err.println("PlaylistManager Errore di Sistema: Impossibile creare la playlist nel database.");
+            e.printStackTrace();
+            throw e;
+        }
     }
 }
