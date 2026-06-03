@@ -40,10 +40,15 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableRow;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.util.Pair;
 
 
 /**
@@ -54,7 +59,19 @@ import javafx.scene.control.TableRow;
  */
 public class LibraryController implements Initializable, Observer{
     
+    private static final String DIALOG_TITLE_NEW_PLAYLIST = "Nuova Playlist";
+    private static final String DIALOG_HEADER_NEW_PLAYLIST = "Inserisci i dettagli della nuova Playlist";
+    private static final String BTN_CREATE_TEXT = "Crea";
+    private static final String PROMPT_PLAYLIST_NAME = "Es: Rock anni 90";
+    private static final String PROMPT_PLAYLIST_IMAGE = "URL o percorso immagine";
+    private static final String LABEL_PLAYLIST_NAME = "Nome Playlist:";
+    private static final String LABEL_PLAYLIST_IMAGE = "Percorso immagine:";
+    private static final String ALERT_TITLE_SUCCESS = "Successo";
+    private static final String ALERT_TITLE_ERROR = "Errore";
+    private static final String ALERT_MSG_ERROR = "Errore durante la creazione della Playlist.";
+    
     private TrackManager subject;
+    
     private Playlist currentOpenPlaylist=null;
     @FXML
     private ListView<Playlist> playlistListView;
@@ -84,8 +101,6 @@ public class LibraryController implements Initializable, Observer{
     private Button addTrackButton;
     
     // TASK T-06/03: Riferimenti FXML per la barra del Player in basso
-    
-    
     @FXML 
     private Label currentTrackTitle;
     
@@ -200,7 +215,7 @@ public class LibraryController implements Initializable, Observer{
         
         loadPlaylistsAsync();
         loadLibraryAsync();
-    }
+    } 
     
     /**
      * TASK T-13/03: Listener per caricare le tracce filtrate al click su una Playlist.
@@ -612,4 +627,79 @@ public class LibraryController implements Initializable, Observer{
         t.setDaemon(true);
         t.start();
     } 
+    
+    @FXML
+    private void createPlaylist() {
+        Dialog<Pair<String, String>> dialog = new Dialog<>();
+        dialog.setTitle(DIALOG_TITLE_NEW_PLAYLIST);
+        dialog.setHeaderText(DIALOG_HEADER_NEW_PLAYLIST);
+
+        ButtonType createButtonType = new ButtonType(BTN_CREATE_TEXT, ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        TextField nameField = new TextField();
+        nameField.setPromptText(PROMPT_PLAYLIST_NAME);
+        TextField imageField = new TextField();
+        imageField.setPromptText(PROMPT_PLAYLIST_IMAGE);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.add(new Label(LABEL_PLAYLIST_NAME), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label(LABEL_PLAYLIST_IMAGE), 0, 1);
+        grid.add(imageField, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+
+        Button okButton = (Button) dialog.getDialogPane().lookupButton(createButtonType);
+        okButton.disableProperty().bind(nameField.textProperty().isEmpty());
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == createButtonType) {
+                return new Pair<>(nameField.getText(), imageField.getText());
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(result -> {
+            String name = result.getKey();
+            String image = result.getValue();
+
+            Task<Playlist> task = new Task<>() {
+            @Override
+                protected Playlist call() {
+                    return PlaylistManager.getInstance().createPlaylist(name, image);
+                }
+            };
+
+            task.setOnSucceeded(event -> {
+                Playlist playlist = task.getValue();
+                Platform.runLater(() -> {
+                    playlistListView.getItems().add(playlist);
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle(ALERT_TITLE_SUCCESS);
+                    alert.setHeaderText(null);
+                    alert.setContentText("Playlist '" + playlist.getName() + "' creata con successo!");
+                    alert.showAndWait();
+                });
+            });
+
+            task.setOnFailed(event -> {
+                Throwable erroreReale = task.getException();
+                if (erroreReale != null) erroreReale.printStackTrace();
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle(ALERT_TITLE_ERROR);
+                    alert.setHeaderText(null);
+                    alert.setContentText(ALERT_MSG_ERROR);
+                    alert.showAndWait();
+                    });
+            });
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
+        });
+    }
 }

@@ -149,4 +149,8 @@ public class PlaylistManager implements Subject {
     public String getState() {
         return state;
     }
+    
+    public Playlist createPlaylist(String name, String image){
+        return dao.createPlaylist(name, image);        
+    }
 }
