@@ -331,34 +331,38 @@ public class LibraryController implements Initializable, Observer{
         
         //T-09/02. Configura il menu contestuale per la tabella dei brani, aggiungendo
         //il popolamento dinamico per l'aggiunta ad una playlist
-        
+        // 1. Creiamo il menu
         Menu addToPlaylistMenu = new Menu("Aggiungi a playlist...");
 
-        // Popolamento dinamico: interroga il backend solo quando l'utente apre la tendina
+        // 2.  renderlo cliccabile
+        addToPlaylistMenu.getItems().add(new MenuItem("Caricamento in corso..."));
+
+      // Popolamento dinamico: Sincrono, per evitare il glitch visivo di JavaFX
         addToPlaylistMenu.setOnShowing(e -> {
             addToPlaylistMenu.getItems().clear();
             
-            // Task asincrono per non bloccare la UI durante la query
-            CompletableFuture.supplyAsync(() -> {
+            try {
+                // Interroghiamo il DB direttamente sul thread grafico
                 PlaylistDAO dao = new PlaylistDAO();
-                return dao.getAllPlaylists();
-            }).thenAccept(playlists -> {
-                Platform.runLater(() -> {
-                    if (playlists.isEmpty()) {
-                        MenuItem emptyItem = new MenuItem("Nessuna playlist disponibile");
-                        emptyItem.setDisable(true);
-                        addToPlaylistMenu.getItems().add(emptyItem);
-                    } else {
-                        // Creazione dinamica delle voci del sottomenu
-                        for (Playlist p : playlists) {
-                            MenuItem item = new MenuItem(p.getName());
-                            // Al click, invoca il metodo passando l'ID della playlist e demandando il salvataggio
-                            item.setOnAction(event -> handleAddTrackToPlaylist(p.getId()));
-                            addToPlaylistMenu.getItems().add(item);
-                        }
+                List<Playlist> playlists = dao.getAllPlaylists();
+                
+                if (playlists.isEmpty()) {
+                    MenuItem emptyItem = new MenuItem("Nessuna playlist disponibile");
+                    emptyItem.setDisable(true);
+                    addToPlaylistMenu.getItems().add(emptyItem);
+                } else {
+                    // Creazione dinamica delle voci del sottomenu
+                    for (Playlist p : playlists) {
+                        MenuItem item = new MenuItem(p.getName());
+                        item.setOnAction(event -> handleAddTrackToPlaylist(p.getId()));
+                        addToPlaylistMenu.getItems().add(item);
                     }
-                });
-            });
+                }
+            } catch (Exception ex) {
+                MenuItem errorItem = new MenuItem("Errore caricamento");
+                errorItem.setDisable(true);
+                addToPlaylistMenu.getItems().add(errorItem);
+            }
         });
         MenuItem editItem = new MenuItem("Modifica Traccia");
         editItem.setOnAction(event -> {
@@ -408,7 +412,8 @@ public class LibraryController implements Initializable, Observer{
      * T-09/02
      * Gestisce l'aggiunta di una traccia ad una specifica playlist.
      */
-
+    
+    @FXML
     private void handleAddTrackToPlaylist(int playlistId) {
         Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
         if (selectedTrack == null) return;
@@ -442,6 +447,15 @@ public class LibraryController implements Initializable, Observer{
                 });
             }
         });
+    }
+    
+    /**
+     * Metodo catturato dal bottone "+" dell'interfaccia FXML.
+     * Non avendo parametri, JavaFX lo riconosce e apre il form.
+     */
+    @FXML
+    private void handleAddTrackToPlaylist() {
+        openTrackForm(null); 
     }
     
     /**
