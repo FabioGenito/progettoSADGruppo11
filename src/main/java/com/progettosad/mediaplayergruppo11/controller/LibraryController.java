@@ -34,6 +34,10 @@ import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistExcep
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_UPDATED;
 import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_DELETED;
+import com.progettosad.mediaplayergruppo11.model.strategy.LoopStrategy;
+import com.progettosad.mediaplayergruppo11.model.strategy.PlaybackStrategy;
+import com.progettosad.mediaplayergruppo11.model.strategy.SequentialStrategy;
+import com.progettosad.mediaplayergruppo11.model.strategy.ShuffleStrategy;
 import com.progettosad.mediaplayergruppo11.utils.TimeUtils;
 
 import java.net.URL;
@@ -125,6 +129,11 @@ public class LibraryController implements Initializable, Observer{
     @FXML
     private Button skipButton;
     
+    @FXML
+    private Button shuffleButton;
+    @FXML
+    private Button loopButton;
+    
     public LibraryController() {
         this.subject = TrackManager.getInstance();
         this.subject.attach(this);
@@ -196,8 +205,7 @@ public class LibraryController implements Initializable, Observer{
                     // Aggiornamento delle Label dei metadati
                     if (currentTrackTitle != null) currentTrackTitle.setText(newTrack.getTitle());
                     if (currentTrackArtist != null) currentTrackArtist.setText(newTrack.getArtist());
-                    if (currentTrackDuration != null) currentTrackDuration.setText(newTrack.getFormattedLength());
-                    
+                    if (currentTrackDuration != null) currentTrackDuration.setText(newTrack.getFormattedLength());    
                     // Evidenzia la nuova traccia nella TableView attiva
                     if (trackTableView != null) {
                         trackTableView.getSelectionModel().select(newTrack);
@@ -355,13 +363,75 @@ public class LibraryController implements Initializable, Observer{
     private void handleNextTrack(){
         PlaybackEngine.getInstance().nextTrack();
     }
+    
+    //T-11/03: shuffle
+    @FXML
+    private void handleToggleShuffle(){
+      PlaybackEngine engine = PlaybackEngine.getInstance();
+        
+        // Verifica se la strategia corrente è già Shuffle
+        if (engine.getPlaybackStrategy() instanceof ShuffleStrategy) {
+            // Disattiva: torna alla riproduzione lineare di default
+            engine.setPlaybackStrategy(new SequentialStrategy());
+            System.out.println("Shuffle DISATTIVATO - Modalità: Sequenziale");
+            
+            
+        } else {
+            
+            engine.setPlaybackStrategy(new ShuffleStrategy());
+            System.out.println("Shuffle ATTIVATO");
+            
+        }
+        updateButtonStyles();
+    }
+    
+    //T-11/03: loop
+    @FXML
+    private void handleToggleLoop() {
+        PlaybackEngine engine = PlaybackEngine.getInstance();
+        
+        // Verifica se la strategia corrente è già Loop
+        if (engine.getPlaybackStrategy() instanceof LoopStrategy) {
+            // Disattiva: torna alla riproduzione lineare di default
+            engine.setPlaybackStrategy(new SequentialStrategy());
+            System.out.println("Loop DISATTIVATO - Modalità: Sequenziale");
+
+        } else {
+           
+            engine.setPlaybackStrategy(new LoopStrategy());
+            System.out.println("Loop ATTIVATO");
+           
+            }
+        updateButtonStyles();
+    }
+    
+    private void updateButtonStyles() {
+        PlaybackStrategy currentStrategy = PlaybackEngine.getInstance().getPlaybackStrategy();
+        
+        // 1. Rimuoviamo la classe "illuminata" da entrambi i bottoni per azzerarli
+        shuffleButton.getStyleClass().remove("button-active");
+        loopButton.getStyleClass().remove("button-active");
+
+        // 2. Aggiungiamo la classe solo al bottone la cui strategia è attiva
+        if (currentStrategy instanceof ShuffleStrategy) {
+            if (!shuffleButton.getStyleClass().contains("button-active")) {
+                shuffleButton.getStyleClass().add("button-active");
+            }
+        } else if (currentStrategy instanceof LoopStrategy) {
+            if (!loopButton.getStyleClass().contains("button-active")) {
+                loopButton.getStyleClass().add("button-active");
+            }
+        }
+    }
+    
+    
     /**
      * Configura il menu contestuale (tasto destro) per la tabella dei brani.
      * L'azione di conferma elimina la traccia esclusivamente dal subject (TrackManager).
      * La View non viene forzata ad aggiornarsi qui, prevenendo disallineamenti: l'aggiornamento
      * visivo avverrà solo a valle, tramite la notifica dell'Observer.
      */
-    
+        
     private void setupContextMenu() {
         if(trackTableView == null) return;
 

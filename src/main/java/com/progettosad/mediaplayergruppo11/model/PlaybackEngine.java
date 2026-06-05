@@ -6,6 +6,8 @@ package com.progettosad.mediaplayergruppo11.model;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
 import com.progettosad.mediaplayergruppo11.model.states.PlayerState;
 import com.progettosad.mediaplayergruppo11.model.states.StoppedState;
+import com.progettosad.mediaplayergruppo11.model.strategy.PlaybackStrategy;
+import com.progettosad.mediaplayergruppo11.model.strategy.SequentialStrategy;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -36,6 +38,7 @@ public class PlaybackEngine {
     private Track currentTrack;
     private Timeline timeline;
     private int totalTime=0;
+    private PlaybackStrategy currentStrategy=new SequentialStrategy();
 
     
     // TASK T-06/03: Proprietà esposte per il Binding con l'interfaccia
@@ -142,11 +145,10 @@ public class PlaybackEngine {
         //Verifica se l'iteratore ha un brano successivo
         if(playlistIterator != null && playlistIterator.hasNext()){
             Track newTrack=playlistIterator.next();
-<<<<<<< HEAD
+
             //T-08/02: il riutilizzo di playTrack garantisce che la logica asincrona
             //del DB venga ereditata automaticamente
-=======
->>>>>>> af887f6 (T - 08/01: Backend – Logica Next e Coda di Riproduzione)
+//T - 08/01: Backend – Logica Next e Coda di Riproduzione)
             playTrack(newTrack);
         }else{
             //Nessun brano successivo: stoppa la ripdouzione
@@ -166,10 +168,19 @@ public class PlaybackEngine {
         return timeline;
     }
     
+    //T-11/03
+    public void setPlaybackStrategy(PlaybackStrategy strategy) {
+        if (strategy != null) {
+            this.currentStrategy = strategy;
+        }
+    }
+    
     public void setCurrentTime(int t){
         this.currentTimeProperty.set(t);
     }
-    
+    public PlaybackStrategy getPlaybackStrategy() {
+        return this.currentStrategy;
+    }
         //T - 19/01: Backend – Riorganizzazione della Coda nel PlaybackEngine
     /**
      * Sposta una traccia all'interno della coda e ricalcola matematicamente
