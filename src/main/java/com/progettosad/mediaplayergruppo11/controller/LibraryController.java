@@ -122,6 +122,9 @@ public class LibraryController implements Initializable, Observer{
     @FXML 
     private Label currentTrackDuration;
     
+    @FXML
+    private Button skipButton;
+    
     public LibraryController() {
         this.subject = TrackManager.getInstance();
         this.subject.attach(this);
@@ -185,6 +188,31 @@ public class LibraryController implements Initializable, Observer{
         }
         
         Track currentTrack = engine.currentTrackProperty().get();
+        //T-8/03--aggiornamento per slezionare la nuova traccia
+        // Listener per reagire al cambio traccia (es. Salto brano o inizio nuova traccia)
+        engine.currentTrackProperty().addListener((observable, oldTrack, newTrack) -> {
+            Platform.runLater(() -> {
+                if (newTrack != null) {
+                    // Aggiornamento delle Label dei metadati
+                    if (currentTrackTitle != null) currentTrackTitle.setText(newTrack.getTitle());
+                    if (currentTrackArtist != null) currentTrackArtist.setText(newTrack.getArtist());
+                    if (currentTrackDuration != null) currentTrackDuration.setText(newTrack.getFormattedLength());
+                    
+                    // Evidenzia la nuova traccia nella TableView attiva
+                    if (trackTableView != null) {
+                        trackTableView.getSelectionModel().select(newTrack);
+               
+                        trackTableView.scrollTo(newTrack); 
+                    }
+                } else {
+                    // Azzeramento in caso la riproduzione finisca e non ci siano più brani
+                    if (currentTrackTitle != null) currentTrackTitle.setText(""); 
+                    if (currentTrackArtist != null) currentTrackArtist.setText("");
+                    if (currentTrackDuration != null) currentTrackDuration.setText("00:00");
+                }
+            });
+        });
+        
         if (currentTrack != null) {
             if (currentTrackTitle != null) currentTrackTitle.setText(currentTrack.getTitle());
             if (currentTrackArtist != null) currentTrackArtist.setText(currentTrack.getArtist());
@@ -318,6 +346,15 @@ public class LibraryController implements Initializable, Observer{
         PlaybackEngine.getInstance().stopTrack();
     }
 
+    /*
+    T-08/03 GEstione dell'avanzamento al brano successivo.
+    invoca il metodo nextTrack() del motore di ripoduzione
+    */
+    
+    @FXML
+    private void handleNextTrack(){
+        PlaybackEngine.getInstance().nextTrack();
+    }
     /**
      * Configura il menu contestuale (tasto destro) per la tabella dei brani.
      * L'azione di conferma elimina la traccia esclusivamente dal subject (TrackManager).

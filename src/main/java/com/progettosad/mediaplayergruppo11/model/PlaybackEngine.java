@@ -103,10 +103,16 @@ public class PlaybackEngine {
 
         currentState.play(this);
         isPlayingProperty.set(true);
-        
-        CompletableFuture.runAsync(()->{
-           TrackDAO dao = new TrackDAO();
-           dao.incrementPlayCount(track.getId());
+            
+        //T-08/02
+        CompletableFuture.runAsync(() -> {
+            try {
+                TrackDAO dao = new TrackDAO();
+                dao.incrementPlayCount(track.getId());
+            } catch (Exception e) {
+                // Gestione sicura nel thread separato per evitare crash a cascata
+                System.err.println("Errore durante l'aggiornamento asincrono del contatore riproduzioni: " + e.getMessage());
+            }
         });
     }
     
@@ -136,6 +142,8 @@ public class PlaybackEngine {
         //Verifica se l'iteratore ha un brano successivo
         if(playlistIterator != null && playlistIterator.hasNext()){
             Track newTrack=playlistIterator.next();
+            //T-08/02: il riutilizzo di playTrack garantisce che la logica asincrona
+            //del DB venga ereditata automaticamente
             playTrack(newTrack);
         }else{
             //Nessun brano successivo: stoppa la ripdouzione

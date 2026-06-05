@@ -125,7 +125,7 @@
                                        <font>
                                           <Font name="System Bold" size="20.0" />
                                        </font></Button>
-                                    <Button fx:id="skipButton" style="-fx-background-color: transparent;" text="⏭" textFill="WHITE" />
+                                    <Button fx:id="skipButton" onAction="#handleNextTrack" style="-fx-background-color: transparent;" text="⏭" textFill="WHITE" />
                                     <Button fx:id="loopButton" style="-fx-background-color: transparent;" text="🔁" textFill="#a7a7a7" />
                                  </children>
                               </HBox>
