@@ -142,8 +142,11 @@ public class PlaybackEngine {
         //Verifica se l'iteratore ha un brano successivo
         if(playlistIterator != null && playlistIterator.hasNext()){
             Track newTrack=playlistIterator.next();
+<<<<<<< HEAD
             //T-08/02: il riutilizzo di playTrack garantisce che la logica asincrona
             //del DB venga ereditata automaticamente
+=======
+>>>>>>> af887f6 (T - 08/01: Backend – Logica Next e Coda di Riproduzione)
             playTrack(newTrack);
         }else{
             //Nessun brano successivo: stoppa la ripdouzione
