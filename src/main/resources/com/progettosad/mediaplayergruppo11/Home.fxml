@@ -120,14 +120,14 @@
                            <children>
                               <HBox alignment="CENTER" spacing="25.0">
                                  <children>
-                                    <ToggleButton fx:id="btnShuffle" onAction="#handleToggleShuffle" style="-fx-background-color: transparent;" text="🔀" textFill="#a7a7a7" />
+                                    <ToggleButton fx:id="btnShuffle"  style="-fx-background-color: transparent;" text="🔀" textFill="#a7a7a7" />
                                     <Button fx:id="backButton" style="-fx-background-color: transparent;" text="⏮" textFill="WHITE" />
                                     <Button fx:id="playerButton" onAction="#handlePlayPause" prefHeight="42.0" prefWidth="42.0" style="-fx-background-color: white; -fx-background-radius: 50;" text="▶" textFill="BLACK">
                                        <font>
                                           <Font name="System Bold" size="20.0" />
                                        </font></Button>
                                     <Button fx:id="skipButton" onAction="#handleNextTrack" style="-fx-background-color: transparent;" text="⏭" textFill="WHITE" />
-                                    <ToggleButton fx:id="btnLoop" onAction="#handleToggleLoop" style="-fx-background-color: transparent;" text="🔁" textFill="#a7a7a7" />
+                                    <ToggleButton fx:id="btnLoop"  style="-fx-background-color: transparent;" text="🔁" textFill="#a7a7a7" />
                                  </children>
                               </HBox>
                               <HBox alignment="CENTER" spacing="12.0">

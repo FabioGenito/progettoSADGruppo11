@@ -155,7 +155,35 @@ public class LibraryController implements Initializable, Observer{
         //Creazione del ToggleGroup per garantire la mutua esclusione automatica dei bottoni Loop e shuffle
         ToggleGroup strategyGroup=new ToggleGroup();
         setupContextMenu();
+        //T-11/02
+        if (btnShuffle != null && btnLoop != null) {
+            btnShuffle.setToggleGroup(strategyGroup);
+            btnLoop.setToggleGroup(strategyGroup);
+        }
         
+        //T-11/02: Configurazione ToggleGroup e Listener per le Strategie
+        if (btnShuffle != null && btnLoop != null) {
+            btnShuffle.setToggleGroup(strategyGroup);
+            btnLoop.setToggleGroup(strategyGroup);
+            
+            // Aggiungiamo un listener al gruppo, non ai singoli bottoni.
+            
+            strategyGroup.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
+                PlaybackEngine engine = PlaybackEngine.getInstance();
+                
+                if (newToggle == btnShuffle) {
+                    engine.setPlaybackStrategy(new ShuffleStrategy());
+                    System.out.println("Strategia impostata a: SHUFFLE");
+                } else if (newToggle == btnLoop) {
+                    engine.setPlaybackStrategy(new LoopStrategy());
+                    System.out.println("Strategia impostata a: LOOP");
+                } else {
+                    // Se newToggle è null, significa che entrambi i bottoni sono spenti
+                    engine.setPlaybackStrategy(new SequentialStrategy());
+                    System.out.println("Strategia ripristinata a: SEQUENZIALE");
+                }
+            });
+        }
         /* * Generazione automatica dell'indice di riga:
          * La colonna non è legata a un attributo del Modello, ma sfrutta 
          * l'indice della TableView per mostrare il numero progressivo del brano.
@@ -376,44 +404,6 @@ public class LibraryController implements Initializable, Observer{
         PlaybackEngine.getInstance().nextTrack();
     }
     
-    //T-11/01: shuffle e 11/02
-    @FXML
-    private void handleToggleShuffle(){
-      PlaybackEngine engine = PlaybackEngine.getInstance();
-        
-        // Verifica se la strategia corrente è già Shuffle
-        if (btnShuffle.isSelected()) {
-            // Disattiva: torna alla riproduzione lineare di default
-            engine.setPlaybackStrategy(new SequentialStrategy());
-            System.out.println("Shuffle Attivato");
-            
-            
-        } else {
-            
-            engine.setPlaybackStrategy(new ShuffleStrategy());
-            System.out.println("Shuffle Disattivato - Modalità: Sequenziale");
-            
-        }
-    }
-    
-    //T-11/01 e 11/02: loop
-    @FXML
-    private void handleToggleLoop() {
-        PlaybackEngine engine = PlaybackEngine.getInstance();
-        
-        // Verifica se la strategia corrente è già Loop
-        if (btnLoop.isSelected()) {
-            // Disattiva: torna alla riproduzione lineare di default
-            engine.setPlaybackStrategy(new SequentialStrategy());
-            System.out.println("Loop Attivato");
-
-        } else {
-           
-            engine.setPlaybackStrategy(new LoopStrategy());
-            System.out.println("Loop Disattivato - Modalità: Sequenziale");
-           
-            }
-    }
     
     
     

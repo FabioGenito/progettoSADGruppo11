@@ -65,11 +65,15 @@ public class PlaybackEngine {
                 progressProperty.set((double) current / totalTime);
             }
             
-            if (current >= totalTime){
-                nextTrack();
-            }
+           
         }));
-        timeline.setCycleCount(Timeline.INDEFINITE);
+        //T11/03:AutoNext
+        timeline.setOnFinished(event -> {
+            System.out.println("PlaybackEngine: Brano terimato: Auto Next!");
+            javafx.application.Platform.runLater(()->{
+                nextTrack();
+            });
+        });
     }
     
     public static synchronized PlaybackEngine getInstance(){
@@ -87,14 +91,17 @@ public class PlaybackEngine {
         
         //verifica se si richiede di riprendere il prano precedentemente messo in pausa
         if (currentTrack != null && currentTrack.getId() == track.getId()){
-            currentState.play(this);
-            isPlayingProperty.set(true);
-            return;
+            if (currentTimeProperty.get() < totalTime - 1) {
+                currentState.play(this);
+                isPlayingProperty.set(true);
+                return;
+            }
         }
         
         //se si cambia il brano l'esecuzione precedente viene interrotta
         if(currentTrack != null){
             stopTrack();
+            timeline.stop();
         }
         this.currentTrack=track;
         this.totalTime=track.getLength();
@@ -104,6 +111,14 @@ public class PlaybackEngine {
         this.progressProperty.set(0.0); 
         this.currentTrackProperty.set(track);
 
+        //T-11/03
+        //Imposta il limite della Timeline. Essendo un KeyFrame di 1 secondo, 
+         // il numero di cicli corrisponde esattamente ai secondi totali del brano.
+        timeline.setCycleCount(this.totalTime > 0 ? this.totalTime : 1);
+
+        timeline.playFromStart(); 
+
+        // Aggiorna lo State Pattern
         currentState.play(this);
         isPlayingProperty.set(true);
             
