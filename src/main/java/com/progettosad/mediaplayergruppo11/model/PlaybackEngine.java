@@ -6,7 +6,6 @@ package com.progettosad.mediaplayergruppo11.model;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
 import com.progettosad.mediaplayergruppo11.model.states.PlayerState;
 import com.progettosad.mediaplayergruppo11.model.states.StoppedState;
-import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -32,8 +31,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 
 public class PlaybackEngine {
     private static PlaybackEngine instance;
-    private List<Track> currentQueue = new ArrayList<>();
-    private int currentTrackIndex = -1;
+    private ConcretePlaylistIterator playlistIterator;
     private PlayerState currentState;
     private Track currentTrack;
     private Timeline timeline;
@@ -65,7 +63,7 @@ public class PlaybackEngine {
             }
             
             if (current >= totalTime){
-                stopTrack();
+                nextTrack();
             }
         }));
         timeline.setCycleCount(Timeline.INDEFINITE);
@@ -124,6 +122,27 @@ public class PlaybackEngine {
         currentTimeProperty.set(0);
     }
     
+    
+    /*
+    * T-08/01: Metodo per determinare l'azione successiva usando l'iteratore
+    */
+    
+    public void nextTrack(){
+        //Delega allo stato corrente l'interruzione della timeline
+        if(currentState!=null){
+            currentState.stop(this);
+        }
+        
+        //Verifica se l'iteratore ha un brano successivo
+        if(playlistIterator != null && playlistIterator.hasNext()){
+            Track newTrack=playlistIterator.next();
+            playTrack(newTrack);
+        }else{
+            //Nessun brano successivo: stoppa la ripdouzione
+            stopTrack();
+        }
+    }
+    
     public PlayerState getCurrentState(){
         return this.currentState;
     }
@@ -146,6 +165,12 @@ public class PlaybackEngine {
      * l'indice del brano in riproduzione per non interrompere il flusso.
      */
     public synchronized void moveTrackInQueue(int oldIndex, int newIndex){
+        if (playlistIterator == null || playlistIterator.getQueue()==null){
+            return;
+        }
+        List<Track> currentQueue=playlistIterator.getQueue();
+        int currentTrackIndex=playlistIterator.getCurrentIndex();
+        
         if (oldIndex < 0 || oldIndex >= currentQueue.size() || 
             newIndex < 0 || newIndex >= currentQueue.size() || oldIndex == newIndex) {
             return;
@@ -162,6 +187,8 @@ public class PlaybackEngine {
         } else if (oldIndex > currentTrackIndex && newIndex <= currentTrackIndex) {
             currentTrackIndex++;
         }
+        
+        playlistIterator.setCurrentIndex(currentTrackIndex);
         // La Timeline non viene toccata, l'avanzamento lineare dei secondi 
         // continua senza subire sbalzi o reset di stato!
         System.out.println("Backend: Traccia spostata. Nuovo indice traccia attiva: " + currentTrackIndex);
@@ -179,10 +206,16 @@ public class PlaybackEngine {
         }
 
         Track trackToPlay = selectedTrack;
+        int startIndex=0;
         if (trackToPlay == null) {
             trackToPlay = currentPlaylist.get(0);
+        }else{
+            startIndex=currentPlaylist.indexOf(trackToPlay);
+            if(startIndex==-1){
+                startIndex=0;
+            }
         }
-
+        this.playlistIterator=new ConcretePlaylistIterator(currentPlaylist, startIndex);
         playTrack(trackToPlay);
     }   
 }
