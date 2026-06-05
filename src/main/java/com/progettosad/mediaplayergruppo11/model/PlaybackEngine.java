@@ -6,6 +6,7 @@ package com.progettosad.mediaplayergruppo11.model;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
 import com.progettosad.mediaplayergruppo11.model.states.PlayerState;
 import com.progettosad.mediaplayergruppo11.model.states.StoppedState;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -31,10 +32,13 @@ import javafx.beans.property.SimpleIntegerProperty;
 
 public class PlaybackEngine {
     private static PlaybackEngine instance;
+    private List<Track> currentQueue = new ArrayList<>();
+    private int currentTrackIndex = -1;
     private PlayerState currentState;
     private Track currentTrack;
     private Timeline timeline;
     private int totalTime=0;
+
     
     // TASK T-06/03: Proprietà esposte per il Binding con l'interfaccia
     private final DoubleProperty progressProperty = new SimpleDoubleProperty(0.0);
@@ -136,6 +140,33 @@ public class PlaybackEngine {
         this.currentTimeProperty.set(t);
     }
     
+        //T - 19/01: Backend – Riorganizzazione della Coda nel PlaybackEngine
+    /**
+     * Sposta una traccia all'interno della coda e ricalcola matematicamente
+     * l'indice del brano in riproduzione per non interrompere il flusso.
+     */
+    public synchronized void moveTrackInQueue(int oldIndex, int newIndex){
+        if (oldIndex < 0 || oldIndex >= currentQueue.size() || 
+            newIndex < 0 || newIndex >= currentQueue.size() || oldIndex == newIndex) {
+            return;
+        }
+        // Manipolazione della lista in memoria
+        Track trackToMove = currentQueue.remove(oldIndex);
+        currentQueue.add(newIndex, trackToMove);
+        
+        // Ricalcolo matematico di currentTrackIndex
+        if (oldIndex == currentTrackIndex) {
+            currentTrackIndex = newIndex;
+        } else if (oldIndex < currentTrackIndex && newIndex >= currentTrackIndex) {
+            currentTrackIndex--;
+        } else if (oldIndex > currentTrackIndex && newIndex <= currentTrackIndex) {
+            currentTrackIndex++;
+        }
+        // La Timeline non viene toccata, l'avanzamento lineare dei secondi 
+        // continua senza subire sbalzi o reset di stato!
+        System.out.println("Backend: Traccia spostata. Nuovo indice traccia attiva: " + currentTrackIndex);
+    }
+    
     /**
      * Determina la traccia da riprodurre garantendo un fallback controllato.
      * Se l'utente preme "Play" senza aver selezionato esplicitamente un brano, 
@@ -153,5 +184,5 @@ public class PlaybackEngine {
         }
 
         playTrack(trackToPlay);
-    }
+    }   
 }
