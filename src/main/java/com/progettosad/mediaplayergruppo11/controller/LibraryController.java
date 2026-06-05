@@ -47,6 +47,9 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TextField;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.GridPane;
 import javafx.util.Pair;
 
@@ -157,9 +160,10 @@ public class LibraryController implements Initializable, Observer{
         
         // TASK T-13/03: Listener sulla ListView delle playlist
         setupPlaylistSelectionListener();
+        // TASK T - 13/03 e T-19/92 : eventi: doppio click per riprodurre e drag and drop per modificare la coda
+        setupTableRows();
 
-        // TASK T-13/03: Evento Doppio Click sulla TableView
-        setupDoubleClickEvent();
+
 
         // TASK T-13/03: Pulsante Home ("Tutti i brani") per rimuovere i filtri
         if (homeButton != null) {
@@ -239,21 +243,8 @@ public class LibraryController implements Initializable, Observer{
         });
     }
 
-    /**
-     * TASK T-13/03: Configurazione Doppio Clic sulla TableView per la riproduzione.
-     */
-    private void setupDoubleClickEvent() {
-        trackTableView.setRowFactory(tv -> {
-            TableRow<Track> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 2 && (!row.isEmpty())) {
-                    Track selectedTrack = row.getItem();
-                    PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
-                }
-            });
-            return row;
-        });
-    }
+
+
     
     /***
      * Metodo centralizzato per aprire il form di traccia.
@@ -742,4 +733,74 @@ public class LibraryController implements Initializable, Observer{
         thread.start();
         });
     }
+    /**
+     * TASK T-13/03: Configurazione Doppio Clic sulla TableView per la riproduzione.
+     */
+    /**
+     * TASL T-19/02: Implementazione del Drag & Drop o dello Spostamento Visivo
+     */
+    private void setupTableRows() {
+    trackTableView.setRowFactory(tv -> {
+        TableRow<Track> row = new TableRow<>();
+
+        // --- 1. GESTIONE DOPPIO CLICK ---
+        row.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                Track selectedTrack = row.getItem();
+                PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
+            }
+        });
+
+        // --- 2. GESTIONE DRAG & DROP ---
+        row.setOnDragDetected(event -> {
+            if (!row.isEmpty() && currentOpenPlaylist != null) {
+                Dragboard db = row.startDragAndDrop(TransferMode.MOVE);
+                db.setDragView(row.snapshot(null, null)); 
+                
+                ClipboardContent cc = new ClipboardContent();
+                cc.putString(String.valueOf(row.getIndex())); 
+                db.setContent(cc);
+                
+                event.consume();
+            }
+        });
+
+        row.setOnDragOver(event -> {
+            Dragboard db = event.getDragboard();
+            if (db.hasString() && currentOpenPlaylist != null) {
+                int draggedIndex = Integer.parseInt(db.getString());
+                if (row.getIndex() != draggedIndex) {
+                    event.acceptTransferModes(TransferMode.MOVE);
+                }
+            }
+            event.consume();
+        });
+
+        row.setOnDragDropped(event -> {
+            Dragboard db = event.getDragboard();
+            boolean success = false;
+            
+            if (db.hasString() && currentOpenPlaylist != null) {
+                int oldIndex = Integer.parseInt(db.getString());
+                int newIndex = row.isEmpty() ? trackTableView.getItems().size() - 1 : row.getIndex();
+
+                // Aggiornamento grafico
+                Track trackToMove = trackTableView.getItems().remove(oldIndex);
+                trackTableView.getItems().add(newIndex, trackToMove);
+
+                // Aggiornamento matematico del backend
+                PlaybackEngine.getInstance().moveTrackInQueue(oldIndex, newIndex);
+                
+                trackTableView.getSelectionModel().select(newIndex);
+                success = true;
+            }
+            
+            event.setDropCompleted(success);
+            event.consume();
+        });
+
+        return row;
+    });
+}
+    
 }
