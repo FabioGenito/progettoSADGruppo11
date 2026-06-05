@@ -51,6 +51,8 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -130,9 +132,10 @@ public class LibraryController implements Initializable, Observer{
     private Button skipButton;
     
     @FXML
-    private Button shuffleButton;
+    private ToggleButton btnShuffle;
+    
     @FXML
-    private Button loopButton;
+    private ToggleButton btnLoop;
     
     public LibraryController() {
         this.subject = TrackManager.getInstance();
@@ -148,6 +151,9 @@ public class LibraryController implements Initializable, Observer{
         colDurata.setCellValueFactory(new PropertyValueFactory<>("formattedLength"));
         colDurata.setStyle("-fx-alignment: CENTER_RIGHT");
         
+        //T-11/02
+        //Creazione del ToggleGroup per garantire la mutua esclusione automatica dei bottoni Loop e shuffle
+        ToggleGroup strategyGroup=new ToggleGroup();
         setupContextMenu();
         
         /* * Generazione automatica dell'indice di riga:
@@ -265,6 +271,12 @@ public class LibraryController implements Initializable, Observer{
         
         loadPlaylistsAsync();
         loadLibraryAsync();
+        
+        //T-11/02
+        if (btnShuffle != null && btnLoop != null) {
+            btnShuffle.setToggleGroup(strategyGroup);
+            btnLoop.setToggleGroup(strategyGroup);
+        }
     } 
     
     /**
@@ -364,65 +376,45 @@ public class LibraryController implements Initializable, Observer{
         PlaybackEngine.getInstance().nextTrack();
     }
     
-    //T-11/03: shuffle
+    //T-11/01: shuffle e 11/02
     @FXML
     private void handleToggleShuffle(){
       PlaybackEngine engine = PlaybackEngine.getInstance();
         
         // Verifica se la strategia corrente è già Shuffle
-        if (engine.getPlaybackStrategy() instanceof ShuffleStrategy) {
+        if (btnShuffle.isSelected()) {
             // Disattiva: torna alla riproduzione lineare di default
             engine.setPlaybackStrategy(new SequentialStrategy());
-            System.out.println("Shuffle DISATTIVATO - Modalità: Sequenziale");
+            System.out.println("Shuffle Attivato");
             
             
         } else {
             
             engine.setPlaybackStrategy(new ShuffleStrategy());
-            System.out.println("Shuffle ATTIVATO");
+            System.out.println("Shuffle Disattivato - Modalità: Sequenziale");
             
         }
-        updateButtonStyles();
     }
     
-    //T-11/03: loop
+    //T-11/01 e 11/02: loop
     @FXML
     private void handleToggleLoop() {
         PlaybackEngine engine = PlaybackEngine.getInstance();
         
         // Verifica se la strategia corrente è già Loop
-        if (engine.getPlaybackStrategy() instanceof LoopStrategy) {
+        if (btnLoop.isSelected()) {
             // Disattiva: torna alla riproduzione lineare di default
             engine.setPlaybackStrategy(new SequentialStrategy());
-            System.out.println("Loop DISATTIVATO - Modalità: Sequenziale");
+            System.out.println("Loop Attivato");
 
         } else {
            
             engine.setPlaybackStrategy(new LoopStrategy());
-            System.out.println("Loop ATTIVATO");
+            System.out.println("Loop Disattivato - Modalità: Sequenziale");
            
             }
-        updateButtonStyles();
     }
     
-    private void updateButtonStyles() {
-        PlaybackStrategy currentStrategy = PlaybackEngine.getInstance().getPlaybackStrategy();
-        
-        // 1. Rimuoviamo la classe "illuminata" da entrambi i bottoni per azzerarli
-        shuffleButton.getStyleClass().remove("button-active");
-        loopButton.getStyleClass().remove("button-active");
-
-        // 2. Aggiungiamo la classe solo al bottone la cui strategia è attiva
-        if (currentStrategy instanceof ShuffleStrategy) {
-            if (!shuffleButton.getStyleClass().contains("button-active")) {
-                shuffleButton.getStyleClass().add("button-active");
-            }
-        } else if (currentStrategy instanceof LoopStrategy) {
-            if (!loopButton.getStyleClass().contains("button-active")) {
-                loopButton.getStyleClass().add("button-active");
-            }
-        }
-    }
     
     
     /**

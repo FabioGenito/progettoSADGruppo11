@@ -12,7 +12,7 @@ import java.util.List;
 /**
  *
  * @author irene
- * T-11/03: Strategia di riproduzione casuale.
+ * T-11/01: Strategia di riproduzione casuale.
  * Genera internamente una coda rimescolata e la percorre sequenzialmente.
  */
 public class ShuffleStrategy implements PlaybackStrategy {

@@ -73,9 +73,9 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     -fx-font-weight: bold;
 }
 /* Stile per indicare che una funzione (Loop/Shuffle) è attiva */
-.button.button-active {
-    -fx-background-color: #1DB954 !important; 
-    -fx-text-fill: white !important; 
+.toggle-button:selected {
+    -fx-background-color: #1DB954 !important;
+    -fx-text-fill: white !important;
     -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, #1DB954, 15, 0.4, 0, 0); 
 }

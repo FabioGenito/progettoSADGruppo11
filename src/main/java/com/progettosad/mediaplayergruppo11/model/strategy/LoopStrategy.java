@@ -9,7 +9,7 @@ import java.util.List;
 /**
  *
  * @author irene
- * T-11/03: strategia di riproduzione a ciclo continuo(loop)
+ * T-11/01: strategia di riproduzione a ciclo continuo(loop)
  * Quando la coda termina ritorna al primo brano.
  */
 public class LoopStrategy implements PlaybackStrategy{

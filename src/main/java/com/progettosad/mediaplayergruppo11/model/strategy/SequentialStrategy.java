@@ -9,6 +9,7 @@ import java.util.List;
 /**
  *
  * @author irene
+ * T-11/01
  * Strategia di riprouduzione lineare: riproduce i brani in ordine e si ferma alla fine della coda
  */
 

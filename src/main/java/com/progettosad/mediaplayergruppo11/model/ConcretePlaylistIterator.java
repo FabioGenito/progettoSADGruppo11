@@ -32,7 +32,7 @@ public class ConcretePlaylistIterator implements PlaylistIterator{
         Track nextTrack = strategy.getNextTrack(queue, currentIndex);
         return nextTrack != null;
     }
-
+//T-11/01
     @Override
     public Track next() {
         PlaybackStrategy strategy = PlaybackEngine.getInstance().getPlaybackStrategy();
