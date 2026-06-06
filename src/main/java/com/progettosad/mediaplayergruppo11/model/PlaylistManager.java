@@ -11,11 +11,13 @@ public class PlaylistManager implements Subject {
 
     public static final String EVENT_TRACK_ADDED_TO_PLAYLIST_PREFIX = "ADDED_TO_PLAYLIST_";
     public static final String EVENT_TRACK_REMOVED_FROM_PLAYLIST_PREFIX = "REMOVED_FROM_PLAYLIST_";
+    public static final String EVENT_PLAYLIST_CREATED = "CREATED_PLAYLIST";
 
     private static PlaylistManager instance;
     private String state;
     private PlaylistDAOInterface dao;
     private List<Observer> observers = new ArrayList<>();
+    private Playlist lastCreatedPlaylist;
 
     private PlaylistManager() {
         this.dao = new PlaylistDAO();
@@ -147,11 +149,19 @@ public class PlaylistManager implements Subject {
         return state;
     }
     
+    public Playlist getLastCreatedPlaylist() {
+        return lastCreatedPlaylist;
+    }
+    
     public Playlist createPlaylist(String name, String image) {
         try {
             Playlist newPlaylist = dao.createPlaylist(name, image);
             
             System.out.println("PlaylistManager: Playlist '" + name + "' creata con successo (ID: " + newPlaylist.getId() + ").");
+            this.lastCreatedPlaylist = newPlaylist;
+            this.state = EVENT_PLAYLIST_CREATED;
+            notifyObservers();
+            
             return newPlaylist;
 
         } catch (IllegalArgumentException e) {

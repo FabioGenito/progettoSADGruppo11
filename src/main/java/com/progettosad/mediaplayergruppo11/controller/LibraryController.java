@@ -20,25 +20,13 @@ import javafx.stage.Stage;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import com.progettosad.mediaplayergruppo11.model.Track;
-import com.progettosad.mediaplayergruppo11.model.Playlist;
-import com.progettosad.mediaplayergruppo11.model.TrackManager;
-import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
+import com.progettosad.mediaplayergruppo11.model.*;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
-import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
-
+import com.progettosad.mediaplayergruppo11.utils.*;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
-
-import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_ADDED;
-import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_UPDATED;
-import static com.progettosad.mediaplayergruppo11.model.TrackManager.EVENT_TRACK_DELETED;
-import com.progettosad.mediaplayergruppo11.model.strategy.LoopStrategy;
-import com.progettosad.mediaplayergruppo11.model.strategy.PlaybackStrategy;
-import com.progettosad.mediaplayergruppo11.model.strategy.SequentialStrategy;
-import com.progettosad.mediaplayergruppo11.model.strategy.ShuffleStrategy;
-import com.progettosad.mediaplayergruppo11.utils.TimeUtils;
+import static com.progettosad.mediaplayergruppo11.model.TrackManager.*;
+import com.progettosad.mediaplayergruppo11.model.strategy.*;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -56,6 +44,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.util.Pair;
 
@@ -80,8 +69,15 @@ public class LibraryController implements Initializable, Observer{
     private static final String ALERT_MSG_ERROR = "Errore durante la creazione della Playlist.";
     
     private TrackManager subject;
-    
     private Playlist currentOpenPlaylist=null;
+    private javafx.scene.Node libraryCenterNode;
+    
+    @FXML
+    private BorderPane mainBorderPane;
+
+    @FXML
+    private Button exploreButton;
+    
     @FXML
     private ListView<Playlist> playlistListView;
 
@@ -144,6 +140,10 @@ public class LibraryController implements Initializable, Observer{
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
+        Platform.runLater(() -> {
+            libraryCenterNode = mainBorderPane.getCenter();
+        });
         
         colTitolo.setCellValueFactory(new PropertyValueFactory<>("title"));
         colArtista.setCellValueFactory(new PropertyValueFactory<>("artist"));
@@ -201,22 +201,39 @@ public class LibraryController implements Initializable, Observer{
             }
         });    
         
-        addTrackButton.setOnAction(event -> openTrackForm(null));
         trackTableView.setPlaceholder(new Label("Nessun brano presente"));
         
         // TASK T-13/03: Listener sulla ListView delle playlist
         setupPlaylistSelectionListener();
         // TASK T - 13/03 e T-19/92 : eventi: doppio click per riprodurre e drag and drop per modificare la coda
         setupTableRows();
+        
+        PlaylistManager.getInstance().attach(new Observer() {
+            @Override
+            public void update() {
+                String stato = PlaylistManager.getInstance().getState();
 
+                if (PlaylistManager.EVENT_PLAYLIST_CREATED.equals(stato)) {
+                    Playlist nuovaPlaylist = PlaylistManager.getInstance().getLastCreatedPlaylist();
 
+                    // Usiamo Platform.runLater perché stiamo modificando la UI
+                    Platform.runLater(() -> {
+                        if (playlistListView != null && nuovaPlaylist != null) {
+                            playlistListView.getItems().add(nuovaPlaylist);
+                            System.out.println("Sidebar aggiornata con la nuova playlist!");
+                        }
+                    });
+                }
+            }
+        });
 
         // TASK T-13/03: Pulsante Home ("Tutti i brani") per rimuovere i filtri
         if (homeButton != null) {
             homeButton.setOnAction(event -> {
-                playlistListView.getSelectionModel().clearSelection(); // Deseleziona la playlist
+                playlistListView.getSelectionModel().clearSelection();
                 currentOpenPlaylist = null;
-                loadLibraryAsync(); // Ricarica tutta la libreria
+                loadLibraryAsync();
+                mainBorderPane.setCenter(libraryCenterNode);
             });
         }
         
@@ -231,7 +248,7 @@ public class LibraryController implements Initializable, Observer{
         }
         
         Track currentTrack = engine.currentTrackProperty().get();
-        //T-8/03--aggiornamento per slezionare la nuova traccia
+        //  T-8/03--aggiornamento per slezionare la nuova traccia
         // Listener per reagire al cambio traccia (es. Salto brano o inizio nuova traccia)
         engine.currentTrackProperty().addListener((observable, oldTrack, newTrack) -> {
             Platform.runLater(() -> {
@@ -247,7 +264,6 @@ public class LibraryController implements Initializable, Observer{
                         trackTableView.scrollTo(newTrack); 
                     }
                 } else {
-                    // Azzeramento in caso la riproduzione finisca e non ci siano più brani
                     if (currentTrackTitle != null) currentTrackTitle.setText(""); 
                     if (currentTrackArtist != null) currentTrackArtist.setText("");
                     if (currentTrackDuration != null) currentTrackDuration.setText("00:00");
@@ -300,13 +316,24 @@ public class LibraryController implements Initializable, Observer{
         loadPlaylistsAsync();
         loadLibraryAsync();
         
-        //T-11/02
+        //  T-11/02
         if (btnShuffle != null && btnLoop != null) {
             btnShuffle.setToggleGroup(strategyGroup);
             btnLoop.setToggleGroup(strategyGroup);
         }
     } 
     
+    @FXML
+    private void openExploreView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/progettosad/mediaplayergruppo11/ExploreView.fxml"));
+            javafx.scene.Parent exploreRoot = loader.load();
+            mainBorderPane.setCenter(exploreRoot);
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertUtils.show(Alert.AlertType.ERROR, "Errore", "Impossibile caricare la vista Scopri.");
+        }
+    }
     /**
      * TASK T-13/03: Listener per caricare le tracce filtrate al click su una Playlist.
      */
@@ -544,7 +571,7 @@ public class LibraryController implements Initializable, Observer{
      * Non avendo parametri, JavaFX lo riconosce e apre il form.
      */
     @FXML
-    private void handleAddTrackToPlaylist() {
+    private void handleAddTrack() {
         openTrackForm(null); 
     }
     
@@ -806,8 +833,8 @@ public class LibraryController implements Initializable, Observer{
             });
 
             task.setOnFailed(event -> {
-                Throwable erroreReale = task.getException();
-                if (erroreReale != null) erroreReale.printStackTrace();
+                Throwable e = task.getException();
+                if (e != null) e.printStackTrace();
                 Platform.runLater(() -> {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle(ALERT_TITLE_ERROR);
@@ -829,67 +856,67 @@ public class LibraryController implements Initializable, Observer{
      * TASL T-19/02: Implementazione del Drag & Drop o dello Spostamento Visivo
      */
     private void setupTableRows() {
-    trackTableView.setRowFactory(tv -> {
-        TableRow<Track> row = new TableRow<>();
+        trackTableView.setRowFactory(tv -> {
+            TableRow<Track> row = new TableRow<>();
 
-        // --- 1. GESTIONE DOPPIO CLICK ---
-        row.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2 && (!row.isEmpty())) {
-                Track selectedTrack = row.getItem();
-                PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
-            }
-        });
-
-        // --- 2. GESTIONE DRAG & DROP ---
-        row.setOnDragDetected(event -> {
-            if (!row.isEmpty() && currentOpenPlaylist != null) {
-                Dragboard db = row.startDragAndDrop(TransferMode.MOVE);
-                db.setDragView(row.snapshot(null, null)); 
-                
-                ClipboardContent cc = new ClipboardContent();
-                cc.putString(String.valueOf(row.getIndex())); 
-                db.setContent(cc);
-                
-                event.consume();
-            }
-        });
-
-        row.setOnDragOver(event -> {
-            Dragboard db = event.getDragboard();
-            if (db.hasString() && currentOpenPlaylist != null) {
-                int draggedIndex = Integer.parseInt(db.getString());
-                if (row.getIndex() != draggedIndex) {
-                    event.acceptTransferModes(TransferMode.MOVE);
+            // --- 1. GESTIONE DOPPIO CLICK ---
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    Track selectedTrack = row.getItem();
+                    PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
                 }
-            }
-            event.consume();
+            });
+
+            // --- 2. GESTIONE DRAG & DROP ---
+            row.setOnDragDetected(event -> {
+                if (!row.isEmpty() && currentOpenPlaylist != null) {
+                    Dragboard db = row.startDragAndDrop(TransferMode.MOVE);
+                    db.setDragView(row.snapshot(null, null)); 
+
+                    ClipboardContent cc = new ClipboardContent();
+                    cc.putString(String.valueOf(row.getIndex())); 
+                    db.setContent(cc);
+
+                    event.consume();
+                }
+            });
+
+            row.setOnDragOver(event -> {
+                Dragboard db = event.getDragboard();
+                if (db.hasString() && currentOpenPlaylist != null) {
+                    int draggedIndex = Integer.parseInt(db.getString());
+                    if (row.getIndex() != draggedIndex) {
+                        event.acceptTransferModes(TransferMode.MOVE);
+                    }
+                }
+                event.consume();
+            });
+
+            row.setOnDragDropped(event -> {
+                Dragboard db = event.getDragboard();
+                boolean success = false;
+
+                if (db.hasString() && currentOpenPlaylist != null) {
+                    int oldIndex = Integer.parseInt(db.getString());
+                    int newIndex = row.isEmpty() ? trackTableView.getItems().size() - 1 : row.getIndex();
+
+                    // Aggiornamento grafico
+                    Track trackToMove = trackTableView.getItems().remove(oldIndex);
+                    trackTableView.getItems().add(newIndex, trackToMove);
+
+                    // Aggiornamento matematico del backend
+                    PlaybackEngine.getInstance().moveTrackInQueue(oldIndex, newIndex);
+
+                    trackTableView.getSelectionModel().select(newIndex);
+                    success = true;
+                }
+
+                event.setDropCompleted(success);
+                event.consume();
+            });
+
+            return row;
         });
-
-        row.setOnDragDropped(event -> {
-            Dragboard db = event.getDragboard();
-            boolean success = false;
-            
-            if (db.hasString() && currentOpenPlaylist != null) {
-                int oldIndex = Integer.parseInt(db.getString());
-                int newIndex = row.isEmpty() ? trackTableView.getItems().size() - 1 : row.getIndex();
-
-                // Aggiornamento grafico
-                Track trackToMove = trackTableView.getItems().remove(oldIndex);
-                trackTableView.getItems().add(newIndex, trackToMove);
-
-                // Aggiornamento matematico del backend
-                PlaybackEngine.getInstance().moveTrackInQueue(oldIndex, newIndex);
-                
-                trackTableView.getSelectionModel().select(newIndex);
-                success = true;
-            }
-            
-            event.setDropCompleted(success);
-            event.consume();
-        });
-
-        return row;
-    });
-}
+    }
     
 }
