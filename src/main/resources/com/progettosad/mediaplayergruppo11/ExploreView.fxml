@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox spacing="20.0" style="-fx-background-color: #121212;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.ExploreController">
+    <padding><Insets bottom="30.0" left="30.0" right="30.0" top="30.0" /></padding>
+    
+    <Label text="Scopri nuove Playlist" textFill="WHITE">
+        <font><Font name="System Bold" size="26.0" /></font>
+    </Label>
+    
+    <HBox alignment="CENTER_LEFT" spacing="15.0">
+        <ComboBox fx:id="filterTypeCombo" prefWidth="150.0" promptText="Criterio" />
+        
+        <TextField fx:id="filterValueField" prefWidth="200.0" promptText="Es: Rock o 2020" style="-fx-background-color: #242424; -fx-text-fill: white;" />
+        
+        <Label text="N. Brani:" textFill="WHITE" />
+        
+        <Spinner fx:id="trackLimitSpinner" prefWidth="80.0" />
+        
+        <Region HBox.hgrow="ALWAYS" />
+        
+        <Button mnemonicParsing="false" onAction="#handleGeneratePlaylist" style="-fx-background-color: #1db954; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Genera Playlist">
+            <padding><Insets bottom="8.0" left="20.0" right="20.0" top="8.0" /></padding>
+        </Button>
+    </HBox>
+
+    <Separator style="-fx-background-color: #282828;" />
+
+    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-control-inner-background: #121212;" VBox.vgrow="ALWAYS">
+        <content>
+            <TilePane fx:id="playlistTilePane" hgap="20.0" vgap="20.0" prefColumns="4" />
+        </content>
+    </ScrollPane>
+</VBox>
