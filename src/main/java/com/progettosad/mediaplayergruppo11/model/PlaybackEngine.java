@@ -8,6 +8,7 @@ import com.progettosad.mediaplayergruppo11.model.states.PlayerState;
 import com.progettosad.mediaplayergruppo11.model.states.StoppedState;
 import com.progettosad.mediaplayergruppo11.model.strategy.PlaybackStrategy;
 import com.progettosad.mediaplayergruppo11.model.strategy.SequentialStrategy;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -252,7 +253,8 @@ public class PlaybackEngine {
                 startIndex=0;
             }
         }
-        this.playlistIterator=new ConcretePlaylistIterator(currentPlaylist, startIndex);
+        List<Track> independentQueue = new ArrayList<>(currentPlaylist);
+        this.playlistIterator = new ConcretePlaylistIterator(independentQueue, startIndex);
         playTrack(trackToPlay);
     }   
 }
