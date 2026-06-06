@@ -41,6 +41,7 @@ import com.progettosad.mediaplayergruppo11.model.strategy.ShuffleStrategy;
 import com.progettosad.mediaplayergruppo11.utils.TimeUtils;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
@@ -832,15 +833,15 @@ public class LibraryController implements Initializable, Observer{
     trackTableView.setRowFactory(tv -> {
         TableRow<Track> row = new TableRow<>();
 
-        // --- 1. GESTIONE DOPPIO CLICK ---
+        // ---GESTIONE DOPPIO CLICK ---
         row.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2 && (!row.isEmpty())) {
                 Track selectedTrack = row.getItem();
                 PlaybackEngine.getInstance().playSelection(selectedTrack, trackTableView.getItems());
             }
         });
-
-        // --- 2. GESTIONE DRAG & DROP ---
+        
+        // --- GESTIONE DRAG & DROP ---
         row.setOnDragDetected(event -> {
             if (!row.isEmpty() && currentOpenPlaylist != null) {
                 Dragboard db = row.startDragAndDrop(TransferMode.MOVE);
@@ -853,6 +854,33 @@ public class LibraryController implements Initializable, Observer{
                 event.consume();
             }
         });
+        row.setOnDragDropped(event -> {
+            Dragboard db = event.getDragboard();
+            boolean success = false;
+            row.getStyleClass().remove("drop-target"); 
+            
+            if (db.hasString() && currentOpenPlaylist != null) {
+                int oldIndex = Integer.parseInt(db.getString());
+                int newIndex = row.isEmpty() ? trackTableView.getItems().size() - 1 : row.getIndex();
+                Track trackToMove = trackTableView.getItems().remove(oldIndex);
+                trackTableView.getItems().add(newIndex, trackToMove);
+                
+                PlaybackEngine.getInstance().moveTrackInQueue(oldIndex, newIndex);
+                List<Track> updatedTracks = new ArrayList<>(trackTableView.getItems());
+        int playlistId = currentOpenPlaylist.getId(); 
+        Thread saveThread = new Thread(() -> {
+            PlaylistManager.getInstance().updatePlaylistTrackOrderAsync(playlistId, updatedTracks);
+        });
+        saveThread.setDaemon(true);
+        saveThread.start();
+        
+        trackTableView.getSelectionModel().select(newIndex);
+        success = true;
+    }
+    
+    event.setDropCompleted(success);
+    event.consume();
+});
 
         row.setOnDragOver(event -> {
             Dragboard db = event.getDragboard();
@@ -887,6 +915,27 @@ public class LibraryController implements Initializable, Observer{
             event.setDropCompleted(success);
             event.consume();
         });
+        // ---  GESTIONE FEEDBACK VISIVO (Mouse Entra) ---
+        row.setOnDragEntered(event -> {
+            Dragboard db = event.getDragboard();
+            if (db.hasString() && currentOpenPlaylist != null) {
+                int draggedIndex = Integer.parseInt(db.getString()
+                );
+                if (row.getIndex() != draggedIndex && !row.isEmpty()) {
+                    if (!row.getStyleClass().contains("drop-target")) {
+                        row.getStyleClass().add("drop-target");
+                    }
+                }
+            }
+            event.consume();
+        });
+        // --- GESTIONE FEEDBACK VISIVO (Mouse Esce) ---
+        row.setOnDragExited(event -> {
+            // Quando il mouse si sposta altrove, rimuovi la linea verde
+            row.getStyleClass().remove("drop-target");
+            event.consume();
+        });
+        
 
         return row;
     });
