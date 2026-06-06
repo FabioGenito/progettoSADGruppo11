@@ -4,6 +4,9 @@
  */
 package com.progettosad.mediaplayergruppo11.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author Lara
@@ -12,6 +15,7 @@ public class Playlist {
     private int id;
     private String name;
     private String image;
+    private List<Track> tracks;
     
     public Playlist() {}
 
@@ -19,6 +23,7 @@ public class Playlist {
         this.id = id;
         this.name = name;
         this.image = image;
+        this.tracks = new ArrayList<>();
     }
 
     public int getId() {
@@ -45,9 +50,20 @@ public class Playlist {
         this.image = image;
     }
     
+    public List<Track> getTracks() {
+        return tracks;
+    }
+
+    public void setTracks(List<Track> tracks) {
+        this.tracks = tracks;
+    }
+
+    public void addSingleTrack(Track track) {
+        this.tracks.add(track);
+    }
+    
     @Override
     public String toString() {
         return this.name;
     }
-    
 }

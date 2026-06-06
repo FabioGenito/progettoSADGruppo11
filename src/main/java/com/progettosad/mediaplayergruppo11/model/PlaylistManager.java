@@ -1,11 +1,8 @@
 package com.progettosad.mediaplayergruppo11.model;
 
-import com.progettosad.mediaplayergruppo11.model.Playlist;
-import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
-import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
+import com.progettosad.mediaplayergruppo11.dao.*;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
-import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.observer.Subject;
+import com.progettosad.mediaplayergruppo11.observer.*;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.concurrent.Task;
@@ -159,11 +156,26 @@ public class PlaylistManager implements Subject {
 
         } catch (IllegalArgumentException e) {
             System.err.println("PlaylistManager Avviso di Validazione: " + e.getMessage());
-            throw e; // Rilancia al Controller in modo che possa mostrare l'errore all'utente
+            throw e;
         } catch (RuntimeException e) {
             System.err.println("PlaylistManager Errore di Sistema: Impossibile creare la playlist nel database.");
             e.printStackTrace();
             throw e;
         }
     }
-}
+    
+    public Playlist generateAutomaticPlaylist(FilterType criteria, Object value, int numberOfTracks, TrackDAOInterface trackDao) {
+        try {
+            List<Track> extractedTracks = trackDao.getTracksByCriteria(criteria, value, numberOfTracks);
+            String playlistTitle = "Mix " + value.toString();
+            Playlist tempPlaylist = new Playlist(-1, playlistTitle, "default_auto_playlist.png");
+            tempPlaylist.setTracks(extractedTracks);
+            System.out.println("PlaylistManager: Generata playlist temporanea '" + playlistTitle + "' con " + extractedTracks.size() + " brani.");
+            return tempPlaylist;
+        } catch (RuntimeException e) {
+            System.err.println("PlaylistManager Errore: Impossibile generare la playlist automatica.");
+            e.printStackTrace();
+            throw e;
+        }
+    }
+}   
