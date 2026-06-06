@@ -3,9 +3,13 @@ package com.progettosad.mediaplayergruppo11.model;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
+import com.progettosad.mediaplayergruppo11.db.DatabaseManager;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
 import com.progettosad.mediaplayergruppo11.observer.Subject;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.concurrent.Task;
@@ -166,4 +170,6 @@ public class PlaylistManager implements Subject {
             throw e;
         }
     }
+ 
+    
 }
