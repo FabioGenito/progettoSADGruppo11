@@ -253,8 +253,10 @@ public class PlaybackEngine {
                 startIndex=0;
             }
         }
+        //usiamo una independent Queue per non creare conflitto con la queue usata 
+        //per modificare l'ordine dei brani in coda
         List<Track> independentQueue = new ArrayList<>(currentPlaylist);
         this.playlistIterator = new ConcretePlaylistIterator(independentQueue, startIndex);
         playTrack(trackToPlay);
-    }   
+}
 }
