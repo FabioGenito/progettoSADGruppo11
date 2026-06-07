@@ -30,6 +30,9 @@ public class UndoManager {
 
     public void saveCommand(Command cmd) {
         commandStack.push(cmd);
+        if (commandStack.size() >= 10) {
+    commandStack.removeLast(); // Mantiene solo gli ultimi 10 comandi in memoria
+}
     }
 
     public void undoLastCommand() {

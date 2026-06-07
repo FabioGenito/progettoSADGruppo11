@@ -43,6 +43,11 @@ public class AddTrackCommand implements Command {
             // L'operazione inversa dell'aggiunta è la rimozione
             dao.removeTrackFromPlaylist(playlistId, trackId);
             System.out.println("Command Undo: Traccia " + trackId + " rimossa dalla playlist " + playlistId);
+            
+            // L'OBSERVER: Avvisa l'interfaccia grafica che il brano non c'è più
+            com.progettosad.mediaplayergruppo11.model.TrackManager.getInstance()
+                  .setState("REMOVED_FROM_PLAYLIST_" + playlistId);
+                  
         } catch (Exception e) {
             System.err.println("Errore durante il ripristino dello stato.");
             e.printStackTrace();

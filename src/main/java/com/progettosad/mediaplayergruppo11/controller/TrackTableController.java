@@ -51,6 +51,12 @@ public class TrackTableController implements Initializable, Observer {
 
     private Playlist currentOpenPlaylist = null; // Memorizza la playlist aperta, se c'è
     private TrackManager subject;
+    
+    private MainShellController mainShell;
+
+    public void setMainShell(MainShellController mainShell) {
+        this.mainShell = mainShell;
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -381,9 +387,13 @@ public class TrackTableController implements Initializable, Observer {
 
                 // 4. Aggiornamento UI e notifica Observer sul thread principale
                 Platform.runLater(() -> {
-                    AlertUtils.show(Alert.AlertType.INFORMATION, "Operazione completata", "Brano aggiunto alla playlist con successo!");
+                    // RICHIAMA IL BANNER FLUTTUANTE
+                    if (mainShell != null) {
+                        mainShell.showUndoNotification();
+                    }
                     
-                    //forziamo qui la notifica Observer per aggiornare l'interfaccia */
+                    /* Nota Architetturale: Poiché abbiamo scavalcato il PlaylistManager, 
+                       forziamo qui la notifica Observer per aggiornare l'interfaccia */
                     if (subject instanceof com.progettosad.mediaplayergruppo11.model.TrackManager) {
                         ((com.progettosad.mediaplayergruppo11.model.TrackManager) subject).setState("ADDED_TO_PLAYLIST_" + playlistId);
                     }
@@ -487,6 +497,14 @@ public class TrackTableController implements Initializable, Observer {
             } else if (stato.startsWith("ADDED_TO_PLAYLIST_")) {
                 int targetPlaylistId = Integer.parseInt(stato.split("_")[3]);
                 if (currentOpenPlaylist != null && currentOpenPlaylist.getId() == targetPlaylistId) {
+                    loadPlaylistTracks(currentOpenPlaylist); 
+                }
+            }
+            else if (stato.startsWith("REMOVED_FROM_PLAYLIST_")) {
+                int targetPlaylistId = Integer.parseInt(stato.split("_")[3]);
+                // Se la playlist attualmente aperta coincide con quella da cui è stato tolto il brano
+                if (currentOpenPlaylist != null && currentOpenPlaylist.getId() == targetPlaylistId) {
+                    // Ricarica asincronamente i dati aggiornati dal database
                     loadPlaylistTracks(currentOpenPlaylist); 
                 }
             }

@@ -9,6 +9,11 @@ import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
 import javafx.scene.control.Alert;
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.progettosad.mediaplayergruppo11.command.UndoManager;
+import javafx.animation.PauseTransition;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 
 /**
  * Controller della vista principale della libreria musicale.
@@ -25,8 +30,15 @@ public class MainShellController implements Initializable {
     @FXML private SidebarController sidebarController;
     @FXML private TrackTableController trackTableController;
     @FXML private PlayerBarController playerBarController;
+    @FXML private HBox undoNotificationBox;
+    @FXML private Label undoMessageLabel;
+    @FXML private Button undoButton;
+    
+    
+    // Oggetto che gestisce il timer senza bloccare l'interfaccia
+    private PauseTransition hideTransition;
 
-    @Override
+@Override
     public void initialize(URL location, ResourceBundle resources) {
         javafx.application.Platform.runLater(() -> {
             libraryCenterNode = mainBorderPane.getCenter();
@@ -37,8 +49,30 @@ public class MainShellController implements Initializable {
             if (playerBarController != null) {
                 playerBarController.setMainShell(this);
             }
-            
+            if (trackTableController != null) {
+                trackTableController.setMainShell(this);
+            }
         });
+        
+        // --- 1. CONFIGURAZIONE DEL BANNER DI NOTIFICA E UNDO (T-14/02) ---
+        // Inizializzazione della transizione di 5 secondi senza bloccare l'interfaccia
+        hideTransition = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(5));
+        
+        // Azione da compiere alla fine dei 5 secondi (nascondere il banner)
+        hideTransition.setOnFinished(event -> undoNotificationBox.setVisible(false));
+
+        // Azione associata al click del pulsante "Annulla"
+        undoButton.setOnAction(event -> {
+            // Ferma il timer per evitare che nasconda il banner graficamente in futuro
+            hideTransition.stop();
+            
+            // Nasconde immediatamente il banner visivo
+            undoNotificationBox.setVisible(false);
+            
+            // Innesca il ripristino ed estrae l'ultimo comando memorizzato nell'Invoker
+            com.progettosad.mediaplayergruppo11.command.UndoManager.getInstance().undoLastCommand();
+        });
+
     }
 
     // --- METODI DI NAVIGAZIONE GLOBALE ---
@@ -51,6 +85,21 @@ public class MainShellController implements Initializable {
     private void handleAddTrack() {
         if (trackTableController != null) {
             trackTableController.handleAddTrack();
+        }
+    }
+    
+    /**
+     *Rende visibile il banner di Undo, imposta il testo e fa partire il timer.
+     * Viene chiamato dai sotto-controller (es. TrackTableController).
+     */
+    public void showUndoNotification() {
+        if (undoNotificationBox != null && undoMessageLabel != null && hideTransition != null) {
+            undoMessageLabel.setText("Traccia aggiunta con successo!");
+            undoNotificationBox.setVisible(true);
+            
+            // playFromStart() garantisce che se si aggiungono due tracce rapidamente, 
+            // il timer di 5 secondi riparta da zero senza far sparire il banner in anticipo.
+            hideTransition.playFromStart();
         }
     }
     
