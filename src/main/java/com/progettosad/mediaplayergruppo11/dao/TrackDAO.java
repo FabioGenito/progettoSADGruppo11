@@ -29,6 +29,106 @@ public class TrackDAO implements TrackDAOInterface {
     private static final String SELECT_ALL_TRACKS = "SELECT * FROM Tracks ORDER BY title ASC";
     private static final String SELECT_BY_GENRE = "SELECT * FROM tracks WHERE genre = ? ORDER BY RANDOM() LIMIT ?";
     private static final String SELECT_BY_YEAR = "SELECT * FROM tracks WHERE publication_year = ? ORDER BY RANDOM() LIMIT ?";
+    private static final String QRY_TOP_GENRES = "SELECT genre, SUM(play_count) FROM tracks GROUP BY genre HAVING SUM(play_count) > 0 ORDER BY 2 DESC LIMIT ?";
+    private static final String QRY_TOP_DECADES = "SELECT ((publication_year / 10) * 10) AS decade, SUM(play_count) FROM tracks GROUP BY 1 HAVING SUM(play_count) > 0 ORDER BY 2 DESC LIMIT ?";    
+    private static final String QRY_FREQ_GENRES = "SELECT genre, COUNT(id) FROM tracks GROUP BY genre ORDER BY 2 DESC LIMIT ?";
+    private static final String QRY_FREQ_DECADES = "SELECT ((publication_year / 10) * 10) AS decade, COUNT(id) FROM tracks GROUP BY 1 ORDER BY 2 DESC LIMIT ?";
+    private static final String SELECT_RANDOM_BY_GENRE = "SELECT * FROM tracks WHERE genre = ? ORDER BY RANDOM() LIMIT ?";
+    private static final String SELECT_RANDOM_BY_DECADE = "SELECT * FROM tracks WHERE ((publication_year / 10) * 10) = ? ORDER BY RANDOM() LIMIT ?";
+    
+    @Override
+    public List<String> getTopFavoriteGenres(int limit) {
+        return fetchStringList(QRY_TOP_GENRES, limit);
+    }
+
+    @Override
+    public List<Integer> getTopFavoriteDecades(int limit) {
+        return fetchIntegerList(QRY_TOP_DECADES, limit);
+    }
+
+    @Override
+    public List<String> getMostFrequentGenres(int limit) {
+        return fetchStringList(QRY_FREQ_GENRES, limit);
+    }
+
+    @Override
+    public List<Integer> getMostFrequentDecades(int limit) {
+        return fetchIntegerList(QRY_FREQ_DECADES, limit);
+    }
+    
+    @Override
+    public List<Track> getRandomTracksByGenre(String genre, int limit) {
+        return fetchRandomTracks(SELECT_RANDOM_BY_GENRE, genre, limit);
+    }
+
+    @Override
+    public List<Track> getRandomTracksByDecade(int decade, int limit) {
+        return fetchRandomTracks(SELECT_RANDOM_BY_DECADE, decade, limit);
+    }
+    
+
+    private List<String> fetchStringList(String query, int limit) {
+        List<String> results = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+             
+            pstmt.setInt(1, limit);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(rs.getString(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore SQL durante l'estrazione delle preferenze (String)", e);
+        }
+        return results;
+    }
+    
+    private List<Track> fetchRandomTracks(String query, Object filterParam, int limit) {
+        List<Track> trackList = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+             
+            pstmt.setObject(1, filterParam);
+            pstmt.setInt(2, limit);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Track track = new Track();
+                    track.setId(rs.getInt("id"));
+                    track.setTitle(rs.getString("title"));
+                    track.setArtist(rs.getString("artist"));
+                    track.setLength(rs.getInt("length"));
+                    track.setAlbum(rs.getString("album"));
+                    track.setPublicationYear(rs.getInt("publication_year"));
+                    track.setGenre(rs.getString("genre"));
+                    track.setImage(rs.getString("image"));
+                    trackList.add(track);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore SQL durante l'estrazione mirata delle tracce", e);
+        }
+        return trackList;
+    }
+    
+
+    private List<Integer> fetchIntegerList(String query, int limit) {
+        List<Integer> results = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+             
+            pstmt.setInt(1, limit);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(rs.getInt(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore SQL durante l'estrazione delle preferenze (Integer)", e);
+        }
+        return results;
+    }
     
     /**
      * Inserisce un oggetto Track nel database PostgreSQL.

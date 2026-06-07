@@ -16,4 +16,10 @@ public interface TrackDAOInterface {
     boolean deleteTrack(int trackId);
     List<Track> getAllTracks();
     List<Track> getTracksByCriteria(FilterType criteria, Object value, int limit);
+    List<String> getTopFavoriteGenres(int limit);
+    List<Integer> getTopFavoriteDecades(int limit);
+    List<String> getMostFrequentGenres(int limit);
+    List<Integer> getMostFrequentDecades(int limit);
+    public List<Track> getRandomTracksByGenre(String genre, int limit);
+    public List<Track> getRandomTracksByDecade(int decade, int limit);
 }

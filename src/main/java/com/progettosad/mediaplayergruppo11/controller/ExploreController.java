@@ -4,7 +4,7 @@
  */
 package com.progettosad.mediaplayergruppo11.controller;
 
-import com.progettosad.mediaplayergruppo11.PlaylistGenerationService;
+import com.progettosad.mediaplayergruppo11.service.PlaylistGenerationService;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
 import com.progettosad.mediaplayergruppo11.model.FilterType;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
@@ -22,6 +22,10 @@ import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 /**
  * FXML Controller class
@@ -98,40 +102,53 @@ public class ExploreController implements Initializable {
      */
     private void renderPlaylistCard(Playlist tempPlaylist) {
         VBox card = new VBox();
-        card.setSpacing(10);
-        card.setPadding(new Insets(15));
-        card.setAlignment(Pos.CENTER);
-        card.setStyle("-fx-background-color: #181818; -fx-background-radius: 8; -fx-border-color: #282828; -fx-border-radius: 8;");
-        card.setPrefWidth(200);
+        card.setSpacing(12);
+        card.setAlignment(Pos.TOP_CENTER);
+        card.setPrefSize(200, 280); 
+        card.setMinSize(200, 280);
+        card.setStyle("-fx-background-color: #181818; -fx-background-radius: 8; -fx-cursor: default; -fx-padding: 15;");
+
+        Region coverImage = new Region();
+        coverImage.setPrefSize(160, 160);
+        coverImage.setMinSize(160, 160);
+        coverImage.setMaxSize(160, 160);
+        coverImage.setStyle("-fx-background-color: #333333; -fx-background-radius: 6;");
 
         Label titleLabel = new Label(tempPlaylist.getName());
         titleLabel.setTextFill(Color.WHITE);
-        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 15));
+        titleLabel.setWrapText(true);
+        titleLabel.setAlignment(Pos.CENTER);
 
-        Label infoLabel = new Label(tempPlaylist.getTracks().size() + " brani trovati");
+        Label infoLabel = new Label(tempPlaylist.getTracks().size() + " brani");
         infoLabel.setTextFill(Color.web("#a7a7a7"));
+        infoLabel.setFont(Font.font("System", 12));
+
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER);
+        buttonBox.setPadding(new Insets(10, 0, 0, 0)); 
 
         Button btnPlay = new Button("▶ Riproduci");
         btnPlay.setStyle("-fx-background-color: transparent; -fx-border-color: white; -fx-border-radius: 20; -fx-text-fill: white; -fx-cursor: hand;");
-        btnPlay.setMaxWidth(Double.MAX_VALUE);
-        
-        // Azione Riproduci: delega al motore di playback
         btnPlay.setOnAction(e -> {
             Track firstTrack = tempPlaylist.getTracks().get(0);
             PlaybackEngine.getInstance().playSelection(firstTrack, tempPlaylist.getTracks());
         });
 
         Button btnSave = new Button("Salva");
-        btnSave.setStyle("-fx-background-color: #1db954; -fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand;");
-        btnSave.setMaxWidth(Double.MAX_VALUE);
-        
+        btnSave.setStyle("-fx-background-color: #1db954; -fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
         btnSave.setOnAction(e -> savePlaylistToDatabase(tempPlaylist, btnSave));
 
-        card.getChildren().addAll(titleLabel, infoLabel, btnPlay, btnSave);
+        buttonBox.getChildren().addAll(btnPlay, btnSave);
+
+        card.getChildren().addAll(coverImage, titleLabel, infoLabel, buttonBox);
         
+        card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #282828; -fx-background-radius: 8; -fx-cursor: default; -fx-padding: 15;"));
+        card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #181818; -fx-background-radius: 8; -fx-cursor: default; -fx-padding: 15;"));
+
         playlistTilePane.getChildren().add(0, card);
     }
-
+    
     /**
      * Inserisce la playlist nel DB e associa le tracce.
      */
