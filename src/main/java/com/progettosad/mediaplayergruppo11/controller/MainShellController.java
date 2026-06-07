@@ -168,9 +168,9 @@ public class MainShellController implements Initializable {
      *Rende visibile il banner di Undo, imposta il testo e fa partire il timer.
      * Viene chiamato dai sotto-controller (es. TrackTableController).
      */
-    public void showUndoNotification() {
+    public void showUndoNotification(String message) {
         if (undoNotificationBox != null && undoMessageLabel != null && hideTransition != null) {
-            undoMessageLabel.setText("Traccia aggiunta con successo!");
+            undoMessageLabel.setText(message);
             undoNotificationBox.setVisible(true);
             
             // playFromStart() garantisce che se si aggiungono due tracce rapidamente, 
