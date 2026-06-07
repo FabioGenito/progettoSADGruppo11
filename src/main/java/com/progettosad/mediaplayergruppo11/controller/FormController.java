@@ -32,7 +32,7 @@ import java.util.ResourceBundle;
  * Implementa la validazione grafica real-time e delega l'operazione I/O
  * a un thread separato (Task) per preservare la reattività della UI.
  */
-public class TrackFormController implements Initializable {
+public class FormController implements Initializable {
 
     @FXML private TextField titleField;
     @FXML private TextField artistField;
@@ -177,7 +177,7 @@ public class TrackFormController implements Initializable {
 
     private void navigateToHome() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/progettosad/mediaplayergruppo11/Home.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/progettosad/mediaplayergruppo11/MainShellView.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) backButton.getScene().getWindow();
             stage.setScene(new Scene(root));

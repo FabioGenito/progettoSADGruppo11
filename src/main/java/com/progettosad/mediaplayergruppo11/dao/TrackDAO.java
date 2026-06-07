@@ -6,6 +6,8 @@ package com.progettosad.mediaplayergruppo11.dao;
 
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.db.DatabaseManager;
+import com.progettosad.mediaplayergruppo11.model.FilterType;
+import static com.progettosad.mediaplayergruppo11.model.FilterType.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,6 +27,8 @@ public class TrackDAO implements TrackDAOInterface {
     private static final String INCREMENT_PLAY_COUNT = "UPDATE tracks SET play_count = play_count + 1 WHERE id = ?";
     private static final String UPDATE_TRACK = "UPDATE tracks SET title = ?, artist = ?, length = ?, album = ?, publication_year = ?, genre = ?, image = ? WHERE id = ?";
     private static final String SELECT_ALL_TRACKS = "SELECT * FROM Tracks ORDER BY title ASC";
+    private static final String SELECT_BY_GENRE = "SELECT * FROM tracks WHERE genre = ? ORDER BY RANDOM() LIMIT ?";
+    private static final String SELECT_BY_YEAR = "SELECT * FROM tracks WHERE publication_year = ? ORDER BY RANDOM() LIMIT ?";
     
     /**
      * Inserisce un oggetto Track nel database PostgreSQL.
@@ -193,4 +197,37 @@ public class TrackDAO implements TrackDAOInterface {
 
         return trackList;
     }
+    
+    @Override
+    public List<Track> getTracksByCriteria(FilterType criteria, Object value, int limit) {
+        List<Track> trackList = new ArrayList<>();
+        String query = null;
+        if (criteria == GENRE) query = SELECT_BY_GENRE;
+        else if(criteria == YEAR) query = SELECT_BY_YEAR;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setObject(1, value); 
+            pstmt.setInt(2, limit);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Track track = new Track();
+                    track.setId(rs.getInt("id"));
+                    track.setTitle(rs.getString("title"));
+                    track.setArtist(rs.getString("artist"));
+                    track.setLength(rs.getInt("length"));
+                    track.setAlbum(rs.getString("album"));
+                    track.setPublicationYear(rs.getInt("publication_year"));
+                    track.setGenre(rs.getString("genre"));
+                    track.setImage(rs.getString("image"));
+                    trackList.add(track);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore SQL durante la generazione automatica della playlist.", e);
+        }
+        return trackList;
+    }
+    
 }
