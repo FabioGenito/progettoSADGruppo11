@@ -83,6 +83,15 @@ public class TrackTableController implements Initializable, Observer {
         // Si iscrive come Observer per le modifiche ai brani
         this.subject = TrackManager.getInstance();
         this.subject.attach(this);
+        
+        PlaybackEngine.getInstance().currentTrackProperty().addListener((observable, oldTrack, newTrack) -> {
+            Platform.runLater(() -> {
+                if (newTrack != null && trackTableView != null) {
+                    trackTableView.getSelectionModel().select(newTrack);
+                    trackTableView.scrollTo(newTrack);
+                }
+            });
+        });
 
         // Caricamento iniziale di tutti i brani
         loadLibraryAsync();
