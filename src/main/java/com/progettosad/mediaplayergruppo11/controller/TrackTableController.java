@@ -4,6 +4,8 @@
  */
 package com.progettosad.mediaplayergruppo11.controller;
 
+import com.progettosad.mediaplayergruppo11.command.MoveTrackCommand;
+import com.progettosad.mediaplayergruppo11.command.UndoManager;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
@@ -285,21 +287,26 @@ public class TrackTableController implements Initializable, Observer {
                 if (db.hasString() && currentOpenPlaylist != null) {
                     int oldIndex = Integer.parseInt(db.getString());
                     int newIndex = row.isEmpty() ? trackTableView.getItems().size() - 1 : row.getIndex();
-
-                    // A. Aggiornamento grafico della TableView
-                    Track trackToMove = trackTableView.getItems().remove(oldIndex);
-                    trackTableView.getItems().add(newIndex, trackToMove);
-
-                    // B. Aggiornamento matematico del backend (Coda musicale)
-                    PlaybackEngine.getInstance().moveTrackInQueue(oldIndex, newIndex);
                     
-                    // C. Salvataggio asincrono sul Database
-                    List<Track> updatedTracks = new ArrayList<>(trackTableView.getItems());
-                    int playlistId = currentOpenPlaylist.getId(); 
-                    PlaylistManager.getInstance().updatePlaylistTrackOrderAsync(playlistId, updatedTracks);
-                    
-                    // Seleziona la traccia nella sua nuova posizione
-                    trackTableView.getSelectionModel().select(newIndex);
+                    // A. Creazione del comando passando gli indici e la lista della UI
+                    MoveTrackCommand moveCommand = new MoveTrackCommand(
+                            oldIndex, 
+                            newIndex, 
+                            currentOpenPlaylist.getId(), 
+                            trackTableView.getItems()
+                    );
+                    // B. Esecuzione del comando e salvataggio nello storico 
+                    moveCommand.execute();
+                    UndoManager.getInstance().saveCommand(moveCommand);
+                    // C. Selezione della nuova riga e Notifica a schermo
+                    Platform.runLater(() -> {
+                        trackTableView.getSelectionModel().select(newIndex);
+                        
+                        if (mainShell != null){
+                            mainShell.showUndoNotification("Scaletta aggiornata!");
+                        }
+                    });
+            
                     success = true;
                 }
                 
@@ -396,13 +403,13 @@ public class TrackTableController implements Initializable, Observer {
                 addTrackCmd.execute(); 
                 
                 // 3. Salvataggio nella pila se l'esecuzione va a buon fine
-                com.progettosad.mediaplayergruppo11.command.UndoManager.getInstance().saveCommand(addTrackCmd); 
+                UndoManager.getInstance().saveCommand(addTrackCmd); 
 
                 // 4. Aggiornamento UI e notifica Observer sul thread principale
                 Platform.runLater(() -> {
                     // RICHIAMA IL BANNER FLUTTUANTE
                     if (mainShell != null) {
-                        mainShell.showUndoNotification();
+                        mainShell.showUndoNotification("Traccia aggiunta con successo!");
                     }
                     
                     /* Nota Architetturale: Poiché abbiamo scavalcato il PlaylistManager, 
