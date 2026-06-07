@@ -4,7 +4,7 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
 */
 /* 
     Created on : 30 mag 2026, 13:29:07
-    Author     : FabioGenito
+    Author     : Fabio
 */
 /* Rimuove i bordi esterni e imposta lo sfondo scuro */
 .table-view {
@@ -17,7 +17,7 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
 .table-view .column-header-background {
     -fx-background-color: #121212;
     -fx-border-color: #282828;
-    -fx-border-width: 0 0 1 0; /* Linea sottile solo sotto l'header */
+    -fx-border-width: 0 0 1 0; 
     -fx-padding: 0 0 5 0;
 }
 
@@ -28,11 +28,11 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
 }
 
 .table-view .column-header .label {
-    -fx-text-fill: #b3b3b3; /* Grigio Spotify */
+    -fx-text-fill: #b3b3b3; 
     -fx-font-family: "Inter", "Segoe UI";
     -fx-font-size: 11px;
     -fx-font-weight: bold;
-    -fx-text-transform: uppercase; /* Rende tutto maiuscolo per lo stile Pro */
+    -fx-text-transform: uppercase; 
     -fx-alignment: CENTER_LEFT;
 }
 
@@ -49,11 +49,11 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
 /* Stile per le celle (i dati) */
 .table-row-cell {
     -fx-background-color: transparent;
-    -fx-cell-size: 50; /* Celle un po' più alte come su Spotify */
+    -fx-cell-size: 50; 
 }
 
 .table-row-cell:filled:hover {
-    -fx-background-color: rgba(255, 255, 255, 0.1); /* Effetto hover riga */
+    -fx-background-color: rgba(255, 255, 255, 0.1); 
 }
 
 .table-row-cell:filled:selected {
@@ -72,6 +72,7 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     -fx-text-fill: white;
     -fx-font-weight: bold;
 }
+
 /* Stile per indicare che una funzione (Loop/Shuffle) è attiva */
 .toggle-button:selected {
     -fx-background-color: #1DB954 !important;
@@ -81,7 +82,34 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
 }
 
 .table-row-cell.drop-target {
-    -fx-border-color: #1DB954; /* Verde in stile Spotify */
-    -fx-border-width: 3 0 0 0; /* Disegna una linea spessa solo in alto */
-    -fx-background-color: #2b2b2b; /* Opzionale: scurisce leggermente la riga */
+    -fx-border-color: #1DB954; 
+    -fx-border-width: 3 0 0 0; 
+    -fx-background-color: #2b2b2b; 
+}
+.table-view {
+    -fx-background-color: #121212; 
+    -fx-control-inner-background: #121212; 
+    -fx-border-color: transparent;
+}
+
+.table-view .filler {
+    -fx-background-color: #121212;
+}
+
+.table-view .corner {
+    -fx-background-color: transparent;
+}
+
+/* --- RIMOZIONE BARRE DI SCORRIMENTO --- */
+
+.table-view .scroll-bar:vertical {
+    -fx-pref-width: 0;
+    -fx-max-width: 0;
+    -fx-opacity: 0;
+}
+
+.table-view .scroll-bar:horizontal {
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+    -fx-opacity: 0;
 }
