@@ -368,9 +368,10 @@ public class TrackTableController implements Initializable, Observer {
         trackTableView.setContextMenu(contextMenu);
     }
 
-    /**
-     * T-09/02
-     * Gestisce l'aggiunta di una traccia ad una specifica playlist.
+/**
+     * T-09/02 e T-14/01
+     * Gestisce l'aggiunta di una traccia ad una specifica playlist implementando il Command Pattern
+     * per rendere l'operazione reversibile tramite UndoManager.
      */
     @FXML
     private void handleAddTrackToPlaylist(int playlistId) {
@@ -379,22 +380,30 @@ public class TrackTableController implements Initializable, Observer {
 
         CompletableFuture.runAsync(() -> {
             try {
-                PlaylistDAO dao = new PlaylistDAO();
-                // Invocazione del backend passando gli ID estratti
-                boolean success = dao.addTrackToPlaylist(playlistId, selectedTrack.getId());
+                PlaylistDAO playlistDAO = new PlaylistDAO(); // Il Receiver
 
-                if (success) {
-                    Platform.runLater(() -> {
-                        AlertUtils.show(Alert.AlertType.INFORMATION, "Operazione completata", "Brano aggiunto alla playlist con successo!");
-                    });
+                // 1. Creazione del command
+                com.progettosad.mediaplayergruppo11.command.Command addTrackCmd = 
+                    new com.progettosad.mediaplayergruppo11.command.AddTrackCommand(selectedTrack.getId(), playlistId, playlistDAO);
+
+                // 2. Esecuzione immediata
+                addTrackCmd.execute(); 
+                
+                // 3. Salvataggio nella pila se l'esecuzione va a buon fine
+                com.progettosad.mediaplayergruppo11.command.UndoManager.getInstance().saveCommand(addTrackCmd); 
+
+                // 4. Aggiornamento UI e notifica Observer sul thread principale
+                Platform.runLater(() -> {
+                    AlertUtils.show(Alert.AlertType.INFORMATION, "Operazione completata", "Brano aggiunto alla playlist con successo!");
                     
-                    // TASK 9/03: Lancio evento Observer 
-                    // Generiamo una stringa di stato che contiene l'azione e l'ID della playlist
+                    //forziamo qui la notifica Observer per aggiornare l'interfaccia */
                     if (subject instanceof com.progettosad.mediaplayergruppo11.model.TrackManager) {
                         ((com.progettosad.mediaplayergruppo11.model.TrackManager) subject).setState("ADDED_TO_PLAYLIST_" + playlistId);
                     }
-                }
+                });
+
             } catch (TrackAlreadyInPlaylistException ex) {
+                // Intercetta l'eccezione lanciata dal metodo execute() del comando
                 Platform.runLater(() -> {
                     AlertUtils.show(Alert.AlertType.ERROR, "Errore di inserimento", "Il brano è già presente in questa playlist.");
                 });
