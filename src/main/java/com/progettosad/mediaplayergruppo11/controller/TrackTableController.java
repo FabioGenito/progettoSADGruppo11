@@ -127,11 +127,24 @@ public class TrackTableController implements Initializable, Observer {
     }
 
     /**
-     * Chiamato dal MainShellController quando l'utente clicca una playlist nella Sidebar
+     * Chiamato dal MainShellController quando l'utente clicca una playlist
      */
     public void loadPlaylistTracks(Playlist playlist) {
         this.currentOpenPlaylist = playlist;
-        loadTracksByPlaylistAsync(playlist.getId());
+        
+        if (playlist.getId() == -1) {
+            // CASO A: È una playlist virtuale (Mix personalizzato)
+            trackTableView.setItems(FXCollections.observableArrayList(playlist.getTracks()));
+            
+            // Specifica T-17/03: Aggiorniamo all'istante la coda di riproduzione attiva
+            if (!playlist.getTracks().isEmpty()) {
+                PlaybackEngine.getInstance().playSelection(playlist.getTracks().get(0), trackTableView.getItems());
+            }
+            
+        } else {
+            // CASO B: È una playlist normale (salvata su DB)
+            loadTracksByPlaylistAsync(playlist.getId());
+        }
     }
 
     // --- CARICAMENTI ASINCRONI ---

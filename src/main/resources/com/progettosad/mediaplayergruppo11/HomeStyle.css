@@ -113,3 +113,49 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     -fx-max-height: 0;
     -fx-opacity: 0;
 }
+
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* --- STILE INPUT VISTA ESPLORA --- */
+.text-field, .combo-box, .spinner {
+    -fx-background-color: #242424;
+    -fx-text-fill: white;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+/* Colore testo all'interno dei box */
+.combo-box .list-cell, .spinner .text-field {
+    -fx-text-fill: white;
+    -fx-background-color: transparent;
+}
+
+/* Sfondo del menu a tendina aperto */
+.combo-box-popup .list-view {
+    -fx-background-color: #242424;
+    -fx-border-color: #333333;
+}
+
+/* Effetto hover nel menu a tendina */
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: #1db954;
+}
+
+/* Bottoni su e giù dello spinner */
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-body-color: #242424;
+    -fx-background-color: #333333;
+}
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: #444444;
+}
+

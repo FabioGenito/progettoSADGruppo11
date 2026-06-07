@@ -2,11 +2,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.progettosad.mediaplayergruppo11;
+package com.progettosad.mediaplayergruppo11.service;
 
 import com.progettosad.mediaplayergruppo11.dao.TrackDAOInterface;
 import com.progettosad.mediaplayergruppo11.model.FilterType;
-import static com.progettosad.mediaplayergruppo11.model.FilterType.*;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import java.util.List;
