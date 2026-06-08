@@ -65,9 +65,37 @@
                 <fx:include fx:id="sidebar" source="SidebarView.fxml" />
             </left>
 
-            <center>
-                <fx:include fx:id="trackTable" source="TrackTableView.fxml" />
-            </center>
+         <center>
+            <VBox spacing="10.0" style="-fx-background-color: #121212;" BorderPane.alignment="CENTER">
+               <padding>
+                  <Insets bottom="10.0" left="20.0" right="20.0" top="20.0" />
+               </padding>
+               <children>
+                  
+                  <Label text="Creati per te" textFill="WHITE">
+                     <font>
+                        <Font name="System Bold" size="22.0" />
+                     </font>
+                  </Label>
+                  
+                  <ScrollPane fitToHeight="true" fitToWidth="true" minHeight="200.0" style="-fx-background-color: transparent; -fx-control-inner-background: #121212; -fx-hbar-policy: NEVER; -fx-vbar-policy: NEVER;">
+                     <content>
+                        <HBox fx:id="consigliatiContainer" alignment="CENTER_LEFT" spacing="15.0" />
+                     </content>
+                  </ScrollPane>
+
+                  <Region prefHeight="10.0" />
+
+                  <Label text="Tutti i brani" textFill="WHITE">
+                     <font>
+                        <Font name="System Bold" size="22.0" />
+                     </font>
+                  </Label>
+                  <fx:include fx:id="trackTable" source="TrackTableView.fxml" VBox.vgrow="ALWAYS" />
+                  
+               </children>
+            </VBox>
+         </center>
 
             <bottom>
                 <fx:include fx:id="playerBar" source="PlayerBarView.fxml" />

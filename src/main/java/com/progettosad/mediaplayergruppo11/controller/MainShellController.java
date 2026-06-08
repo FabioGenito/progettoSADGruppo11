@@ -15,6 +15,7 @@ import com.progettosad.mediaplayergruppo11.command.UndoManager;
 import javafx.animation.PauseTransition;
 import javafx.concurrent.Task;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
@@ -33,16 +34,15 @@ import javafx.scene.text.FontWeight;
 
 public class MainShellController implements Initializable {
 
-    private javafx.scene.Node libraryCenterNode;
+    private Node libraryCenterNode;
     @FXML private BorderPane mainBorderPane;
-    @FXML private javafx.scene.control.Button addTrackButton;
     @FXML private SidebarController sidebarController;
     @FXML private TrackTableController trackTableController;
     @FXML private PlayerBarController playerBarController;
     @FXML private HBox undoNotificationBox;
     @FXML private Label undoMessageLabel;
     @FXML private Button undoButton;
-    @FXML private VBox consigliatiContainer;
+    @FXML private HBox consigliatiContainer;
     
     
     // Oggetto che gestisce il timer senza bloccare l'interfaccia
