@@ -20,6 +20,6 @@ public interface TrackDAOInterface {
     List<Integer> getTopFavoriteDecades(int limit);
     List<String> getMostFrequentGenres(int limit);
     List<Integer> getMostFrequentDecades(int limit);
-    public List<Track> getRandomTracksByGenre(String genre, int limit);
-    public List<Track> getRandomTracksByDecade(int decade, int limit);
+    List<Track> getRandomTracksByGenre(String genre, int limit);
+    List<Track> getRandomTracksByDecade(int decade, int limit);
 }

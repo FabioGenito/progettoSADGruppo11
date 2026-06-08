@@ -19,13 +19,21 @@ import java.util.List;
 public class RecommendationEngine {
 
     private static RecommendationEngine instance;
-    private final UserPreferencesService preferencesService;
-    private final TrackDAOInterface trackDAO;
+    private UserPreferencesService preferencesService;
+    private TrackDAOInterface trackDAO;
 
     // Costruttore privato (Singleton Pattern)
     private RecommendationEngine() {
         this.trackDAO = new TrackDAO();
         this.preferencesService = new UserPreferencesService(this.trackDAO);
+    }
+    
+    protected static void setTestInstance(TrackDAOInterface stubDao) {
+        instance = new RecommendationEngine();
+        // Richiede di togliere il 'final' alle variabili di istanza, 
+        // oppure di re-istanziare i servizi con lo stub:
+        instance.trackDAO = stubDao;
+        instance.preferencesService = new UserPreferencesService(stubDao);
     }
 
     public static synchronized RecommendationEngine getInstance() {

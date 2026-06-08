@@ -2,10 +2,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.progettosad.mediaplayergruppo11.model;
+package com.progettosad.mediaplayergruppo11.dao;
 
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
+import com.progettosad.mediaplayergruppo11.model.Playlist;
+import com.progettosad.mediaplayergruppo11.model.Track;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,5 +70,16 @@ public class FakePlaylistDAO implements PlaylistDAOInterface {
     @Override
     public List<Track> getTracksByPlaylist(int playlistId) {
         return new ArrayList<>(); 
+    }
+    
+    @Override
+    public void updatePlaylistTrackOrder(int playlistId, List<Track> tracks) {
+        if (playlistTracks.containsKey(playlistId)) {
+            List<Integer> newOrderIds = new ArrayList<>();
+            for (Track t : tracks) {
+                newOrderIds.add(t.getId());
+            }
+            playlistTracks.put(playlistId, newOrderIds);
+        }
     }
 }

@@ -19,5 +19,5 @@ public interface PlaylistDAOInterface {
     boolean addTrackToPlaylist(int playlistId, int trackId);
     boolean removeTrackFromPlaylist(int playlistId, int trackId);
     List<Track> getTracksByPlaylist(int playlistId);
-   void updatePlaylistTrackOrder(int playlistId, List<Track> tracks);
+    void updatePlaylistTrackOrder(int playlistId, List<Track> tracks);
 }

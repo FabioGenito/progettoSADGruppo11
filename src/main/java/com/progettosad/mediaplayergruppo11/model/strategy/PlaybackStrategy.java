@@ -12,8 +12,7 @@ import java.util.List;
  * @author irene
  */
 public interface PlaybackStrategy {
-    //Calcola e restituisce il prossimo brano da riprodurr..
-Track getNextTrack(List<Track> queue, int currentIndex);
+    Track getNextTrack(List<Track> queue, int currentIndex);
 }
 
 
