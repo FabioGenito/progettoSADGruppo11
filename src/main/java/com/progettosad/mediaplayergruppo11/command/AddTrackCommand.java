@@ -3,7 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.progettosad.mediaplayergruppo11.command;
-import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
+import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 /**
  *
@@ -16,9 +16,9 @@ import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistExcep
 public class AddTrackCommand implements Command {
     private final int trackId;
     private final int playlistId;
-    private final PlaylistDAO dao; // Receiver
+    private final PlaylistDAOInterface  dao; // Receiver
 
-    public AddTrackCommand(int trackId, int playlistId, PlaylistDAO dao) {
+    public AddTrackCommand(int trackId, int playlistId, PlaylistDAOInterface  dao) {
         this.trackId = trackId;
         this.playlistId = playlistId;
         this.dao = dao;
