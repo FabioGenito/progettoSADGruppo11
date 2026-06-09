@@ -4,6 +4,7 @@
  */
 package com.progettosad.mediaplayergruppo11.model;
 
+import com.progettosad.mediaplayergruppo11.dao.FakeTrackDAO;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

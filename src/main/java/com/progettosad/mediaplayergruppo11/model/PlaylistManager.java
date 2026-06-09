@@ -1,11 +1,14 @@
 package com.progettosad.mediaplayergruppo11.model;
 
-import com.progettosad.mediaplayergruppo11.model.Playlist;
-import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
-import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
+import com.progettosad.mediaplayergruppo11.dao.*;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
+import java.util.List;
+import javafx.concurrent.Task;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
 import com.progettosad.mediaplayergruppo11.observer.Subject;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.concurrent.Task;
@@ -14,11 +17,13 @@ public class PlaylistManager implements Subject {
 
     public static final String EVENT_TRACK_ADDED_TO_PLAYLIST_PREFIX = "ADDED_TO_PLAYLIST_";
     public static final String EVENT_TRACK_REMOVED_FROM_PLAYLIST_PREFIX = "REMOVED_FROM_PLAYLIST_";
+    public static final String EVENT_PLAYLIST_CREATED = "CREATED_PLAYLIST";
 
     private static PlaylistManager instance;
     private String state;
     private PlaylistDAOInterface dao;
     private List<Observer> observers = new ArrayList<>();
+    private Playlist lastCreatedPlaylist;
 
     private PlaylistManager() {
         this.dao = new PlaylistDAO();
@@ -150,20 +155,71 @@ public class PlaylistManager implements Subject {
         return state;
     }
     
+    public Playlist getLastCreatedPlaylist() {
+        return lastCreatedPlaylist;
+    }
+    
     public Playlist createPlaylist(String name, String image) {
         try {
             Playlist newPlaylist = dao.createPlaylist(name, image);
             
             System.out.println("PlaylistManager: Playlist '" + name + "' creata con successo (ID: " + newPlaylist.getId() + ").");
+            this.lastCreatedPlaylist = newPlaylist;
+            this.state = EVENT_PLAYLIST_CREATED;
+            notifyObservers();
+            
             return newPlaylist;
 
         } catch (IllegalArgumentException e) {
             System.err.println("PlaylistManager Avviso di Validazione: " + e.getMessage());
-            throw e; // Rilancia al Controller in modo che possa mostrare l'errore all'utente
+            throw e;
         } catch (RuntimeException e) {
             System.err.println("PlaylistManager Errore di Sistema: Impossibile creare la playlist nel database.");
             e.printStackTrace();
             throw e;
         }
     }
-}
+
+    
+    public Playlist generateAutomaticPlaylist(FilterType criteria, Object value, int numberOfTracks, TrackDAOInterface trackDao) {
+        try {
+            List<Track> extractedTracks = trackDao.getTracksByCriteria(criteria, value, numberOfTracks);
+            String playlistTitle = "Mix " + value.toString();
+            Playlist tempPlaylist = new Playlist(-1, playlistTitle, "default_auto_playlist.png");
+            tempPlaylist.setTracks(extractedTracks);
+            System.out.println("PlaylistManager: Generata playlist temporanea '" + playlistTitle + "' con " + extractedTracks.size() + " brani.");
+            return tempPlaylist;
+        } catch (RuntimeException e) {
+            System.err.println("PlaylistManager Errore: Impossibile generare la playlist automatica.");
+            e.printStackTrace();
+            throw e;
+        }
+    }
+    /**
+     * Coordina in modo asincrono il salvataggio del nuovo ordine delle tracce.
+     * Delega l'operazione al DAO per non bloccare la UI.
+     * @param playlistId L'ID della playlist modificata
+     * @param orderedTracks La lista delle tracce nel nuovo ordine
+     */
+    public void updatePlaylistTrackOrderAsync(int playlistId, List<Track> orderedTracks) {
+        Task<Void> updateTask = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                dao.updatePlaylistTrackOrder(playlistId, orderedTracks);
+                return null;
+            }
+        };
+        updateTask.setOnSucceeded(event -> {
+            System.out.println("PlaylistManager [Async]: Ordine salvato per la playlist " + playlistId);
+        });
+
+        updateTask.setOnFailed(event -> {
+            System.err.println("PlaylistManager [Async] Errore: Impossibile salvare l'ordine delle tracce.");
+            updateTask.getException().printStackTrace();
+        });
+        Thread backgroundThread = new Thread(updateTask);
+        backgroundThread.setDaemon(true);
+        backgroundThread.start();
+    }
+    
+}   

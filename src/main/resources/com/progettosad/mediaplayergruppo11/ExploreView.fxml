@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox spacing="25.0" style="-fx-background-color: #121212;" stylesheets="@HomeStyle.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.ExploreController">
+    <padding><Insets bottom="30.0" left="40.0" right="40.0" top="30.0" /></padding>
+    
+    <Label text="Scopri nuove Playlist" textFill="WHITE">
+        <font><Font name="System Bold" size="28.0" /></font>
+    </Label>
+    
+    <HBox alignment="CENTER_LEFT" spacing="20.0" style="-fx-background-color: #181818; -fx-padding: 15; -fx-background-radius: 8;">
+        <Label text="Criterio:" textFill="#a7a7a7">
+            <font><Font name="System Bold" size="13.0" /></font>
+        </Label>
+        <ComboBox fx:id="filterTypeCombo" prefWidth="130.0" promptText="Scegli" />
+        
+        <Label text="Valore:" textFill="#a7a7a7">
+            <font><Font name="System Bold" size="13.0" /></font>
+        </Label>
+        <TextField fx:id="filterValueField" prefWidth="180.0" promptText="Es: Rock o 1990" />
+        
+        <Label text="Brani:" textFill="#a7a7a7">
+            <font><Font name="System Bold" size="13.0" /></font>
+        </Label>
+        <Spinner fx:id="trackLimitSpinner" prefWidth="70.0" />
+        
+        <Region HBox.hgrow="ALWAYS" />
+        
+        <Button mnemonicParsing="false" onAction="#handleGeneratePlaylist" style="-fx-background-color: #1db954; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Genera Mix">
+            <padding><Insets bottom="10.0" left="25.0" right="25.0" top="10.0" /></padding>
+        </Button>
+    </HBox>
+
+    <Label text="Risultati:" textFill="WHITE">
+        <font><Font name="System Bold" size="20.0" /></font>
+    </Label>
+
+    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-control-inner-background: #121212;" VBox.vgrow="ALWAYS">
+        <content>
+            <TilePane fx:id="playlistTilePane" hgap="25.0" vgap="25.0" prefColumns="4" />
+        </content>
+    </ScrollPane>
+</VBox>

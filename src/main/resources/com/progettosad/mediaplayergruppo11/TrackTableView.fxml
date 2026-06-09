@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="20.0" style="-fx-background-color: #121212;" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.TrackTableController">
+    <padding>
+        <Insets bottom="10.0" left="30.0" right="30.0" top="30.0" />
+    </padding>
+    <children>
+        <TableView fx:id="trackTableView" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colIndex" prefWidth="40.0" text="#" />
+                <TableColumn fx:id="colTitolo" prefWidth="300.0" styleClass="col-titolo-style" text="Titolo" />
+                <TableColumn fx:id="colArtista" prefWidth="200.0" text="Artista" />
+                <TableColumn fx:id="colAlbum" prefWidth="200.0" text="Album" />
+                <TableColumn fx:id="colDurata" prefWidth="80.0" text="⏱" />
+            </columns>
+        </TableView>
+    </children>
+</VBox>

@@ -4,6 +4,7 @@
  */
 package com.progettosad.mediaplayergruppo11.model;
 
+import com.progettosad.mediaplayergruppo11.dao.FakePlaylistDAO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

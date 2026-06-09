@@ -6,6 +6,9 @@ package com.progettosad.mediaplayergruppo11.model;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
 import com.progettosad.mediaplayergruppo11.model.states.PlayerState;
 import com.progettosad.mediaplayergruppo11.model.states.StoppedState;
+import com.progettosad.mediaplayergruppo11.model.strategy.PlaybackStrategy;
+import com.progettosad.mediaplayergruppo11.model.strategy.SequentialStrategy;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -31,10 +34,13 @@ import javafx.beans.property.SimpleIntegerProperty;
 
 public class PlaybackEngine {
     private static PlaybackEngine instance;
+    private ConcretePlaylistIterator playlistIterator;
     private PlayerState currentState;
     private Track currentTrack;
     private Timeline timeline;
     private int totalTime=0;
+    private PlaybackStrategy currentStrategy=new SequentialStrategy();
+
     
     // TASK T-06/03: Proprietà esposte per il Binding con l'interfaccia
     private final DoubleProperty progressProperty = new SimpleDoubleProperty(0.0);
@@ -60,11 +66,15 @@ public class PlaybackEngine {
                 progressProperty.set((double) current / totalTime);
             }
             
-            if (current >= totalTime){
-                stopTrack();
-            }
+           
         }));
-        timeline.setCycleCount(Timeline.INDEFINITE);
+        //T11/03:AutoNext
+        timeline.setOnFinished(event -> {
+            System.out.println("PlaybackEngine: Brano terimato: Auto Next!");
+            javafx.application.Platform.runLater(()->{
+                nextTrack();
+            });
+        });
     }
     
     public static synchronized PlaybackEngine getInstance(){
@@ -82,14 +92,17 @@ public class PlaybackEngine {
         
         //verifica se si richiede di riprendere il prano precedentemente messo in pausa
         if (currentTrack != null && currentTrack.getId() == track.getId()){
-            currentState.play(this);
-            isPlayingProperty.set(true);
-            return;
+            if (currentTimeProperty.get() < totalTime - 1) {
+                currentState.play(this);
+                isPlayingProperty.set(true);
+                return;
+            }
         }
         
         //se si cambia il brano l'esecuzione precedente viene interrotta
         if(currentTrack != null){
             stopTrack();
+            timeline.stop();
         }
         this.currentTrack=track;
         this.totalTime=track.getLength();
@@ -99,12 +112,26 @@ public class PlaybackEngine {
         this.progressProperty.set(0.0); 
         this.currentTrackProperty.set(track);
 
+        //T-11/03
+        //Imposta il limite della Timeline. Essendo un KeyFrame di 1 secondo, 
+         // il numero di cicli corrisponde esattamente ai secondi totali del brano.
+        timeline.setCycleCount(this.totalTime > 0 ? this.totalTime : 1);
+
+        timeline.playFromStart(); 
+
+        // Aggiorna lo State Pattern
         currentState.play(this);
         isPlayingProperty.set(true);
-        
-        CompletableFuture.runAsync(()->{
-           TrackDAO dao = new TrackDAO();
-           dao.incrementPlayCount(track.getId());
+            
+        //T-08/02
+        CompletableFuture.runAsync(() -> {
+            try {
+                TrackDAO dao = new TrackDAO();
+                dao.incrementPlayCount(track.getId());
+            } catch (Exception e) {
+                // Gestione sicura nel thread separato per evitare crash a cascata
+                System.err.println("Errore durante l'aggiornamento asincrono del contatore riproduzioni: " + e.getMessage());
+            }
         });
     }
     
@@ -120,6 +147,31 @@ public class PlaybackEngine {
         currentTimeProperty.set(0);
     }
     
+    
+    /*
+    * T-08/01: Metodo per determinare l'azione successiva usando l'iteratore
+    */
+    
+    public void nextTrack(){
+        //Delega allo stato corrente l'interruzione della timeline
+        if(currentState!=null){
+            currentState.stop(this);
+        }
+        
+        //Verifica se l'iteratore ha un brano successivo
+        if(playlistIterator != null && playlistIterator.hasNext()){
+            Track newTrack=playlistIterator.next();
+
+            //T-08/02: il riutilizzo di playTrack garantisce che la logica asincrona
+            //del DB venga ereditata automaticamente
+//T - 08/01: Backend – Logica Next e Coda di Riproduzione)
+            playTrack(newTrack);
+        }else{
+            //Nessun brano successivo: stoppa la ripdouzione
+            stopTrack();
+        }
+    }
+    
     public PlayerState getCurrentState(){
         return this.currentState;
     }
@@ -132,8 +184,52 @@ public class PlaybackEngine {
         return timeline;
     }
     
+    //T-11/01
+    public void setPlaybackStrategy(PlaybackStrategy strategy) {
+        if (strategy != null) {
+            this.currentStrategy = strategy;
+        }
+    }
+    
     public void setCurrentTime(int t){
         this.currentTimeProperty.set(t);
+    }
+    public PlaybackStrategy getPlaybackStrategy() {
+        return this.currentStrategy;
+    }
+        //T - 19/01: Backend – Riorganizzazione della Coda nel PlaybackEngine
+    /**
+     * Sposta una traccia all'interno della coda e ricalcola matematicamente
+     * l'indice del brano in riproduzione per non interrompere il flusso.
+     */
+    public synchronized void moveTrackInQueue(int oldIndex, int newIndex){
+        if (playlistIterator == null || playlistIterator.getQueue()==null){
+            return;
+        }
+        List<Track> currentQueue=playlistIterator.getQueue();
+        int currentTrackIndex=playlistIterator.getCurrentIndex();
+        
+        if (oldIndex < 0 || oldIndex >= currentQueue.size() || 
+            newIndex < 0 || newIndex >= currentQueue.size() || oldIndex == newIndex) {
+            return;
+        }
+        // Manipolazione della lista in memoria
+        Track trackToMove = currentQueue.remove(oldIndex);
+        currentQueue.add(newIndex, trackToMove);
+        
+        // Ricalcolo matematico di currentTrackIndex
+        if (oldIndex == currentTrackIndex) {
+            currentTrackIndex = newIndex;
+        } else if (oldIndex < currentTrackIndex && newIndex >= currentTrackIndex) {
+            currentTrackIndex--;
+        } else if (oldIndex > currentTrackIndex && newIndex <= currentTrackIndex) {
+            currentTrackIndex++;
+        }
+        
+        playlistIterator.setCurrentIndex(currentTrackIndex);
+        // La Timeline non viene toccata, l'avanzamento lineare dei secondi 
+        // continua senza subire sbalzi o reset di stato!
+        System.out.println("Backend: Traccia spostata. Nuovo indice traccia attiva: " + currentTrackIndex);
     }
     
     /**
@@ -148,10 +244,19 @@ public class PlaybackEngine {
         }
 
         Track trackToPlay = selectedTrack;
+        int startIndex=0;
         if (trackToPlay == null) {
             trackToPlay = currentPlaylist.get(0);
+        }else{
+            startIndex=currentPlaylist.indexOf(trackToPlay);
+            if(startIndex==-1){
+                startIndex=0;
+            }
         }
-
+        //usiamo una independent Queue per non creare conflitto con la queue usata 
+        //per modificare l'ordine dei brani in coda
+        List<Track> independentQueue = new ArrayList<>(currentPlaylist);
+        this.playlistIterator = new ConcretePlaylistIterator(independentQueue, startIndex);
         playTrack(trackToPlay);
-    }
+}
 }

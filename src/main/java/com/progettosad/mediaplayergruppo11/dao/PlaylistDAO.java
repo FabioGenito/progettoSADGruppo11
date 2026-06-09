@@ -177,4 +177,22 @@ public class PlaylistDAO implements PlaylistDAOInterface {
 
         return tracks;
     }
+    
+    @Override
+    public void updatePlaylistTrackOrder(int playlistId, List<Track> tracks) {
+    String sql = "UPDATE playlist_tracks SET posizione = ? WHERE playlist_id = ? AND track_id = ?";
+    try (Connection conn = DatabaseManager.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+        for (int i = 0; i < tracks.size(); i++) {
+            stmt.setInt(1, i);                       // Nuovo indice (0, 1, 2...)
+            stmt.setInt(2, playlistId);              // ID della playlist
+            stmt.setInt(3, tracks.get(i).getId());   // ID della traccia
+            stmt.executeUpdate();
+        }
+
+    } catch (SQLException e) {
+        throw new RuntimeException("Errore SQL durante l'aggiornamento dell'ordine della playlist", e);
+    }
+}
+    
 }
