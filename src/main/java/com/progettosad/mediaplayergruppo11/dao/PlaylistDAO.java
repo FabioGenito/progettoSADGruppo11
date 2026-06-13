@@ -18,7 +18,7 @@ public class PlaylistDAO implements PlaylistDAOInterface {
     private static final String SELECT_ALL_PLAYLISTS = "SELECT id, name, image FROM playlist ORDER BY id ASC";
     private static final String ADD_TRACK_TO_PLAYLIST = "INSERT INTO playlist_tracks (playlist_id, track_id) VALUES (?, ?)";
     private static final String REMOVE_TRACK_FROM_PLAYLIST = "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?";
-    private static final String SELECT_TRACKS_BY_PLAYLIST = "SELECT t.* FROM Tracks t JOIN playlist_tracks pt ON t.id = pt.track_id WHERE pt.playlist_id = ? ORDER BY t.title ASC";
+    private static final String SELECT_TRACKS_BY_PLAYLIST = "SELECT t.* FROM tracks t " + "JOIN playlist_tracks pt ON t.id = pt.track_id " + "WHERE pt.playlist_id = ? " + "ORDER BY pt.position ASC";
     
     /**
      * Crea una nuova playlist nel database e ne recupera l'ID generato automaticamente.
@@ -142,7 +142,9 @@ public class PlaylistDAO implements PlaylistDAOInterface {
     }
     
     /**
-     * T-013/01: Estrae tutti i brani associati a una specifica playlist tramite una JOIN.
+     * T-013/01 e T-20/02: Estrae tutti i brani associati a una specifica playlist tramite una JOIN.
+     * I brani vengono restituiti rispettando rigorosamente l'ordine sequenziale 
+     * salvato nel database (colonna position).
      * @param playlistId L'ID della playlist da esplorare
      * @return Una lista di oggetti Track ordinati alfabeticamente
      */
