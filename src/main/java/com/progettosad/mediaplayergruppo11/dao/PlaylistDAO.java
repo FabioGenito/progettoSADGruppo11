@@ -194,5 +194,56 @@ public class PlaylistDAO implements PlaylistDAOInterface {
         throw new RuntimeException("Errore SQL durante l'aggiornamento dell'ordine della playlist", e);
     }
 }
+    /**
+     * T - 20/01: Aggiorna l'ordine sequenziale dei brani in una playlist.
+     * Utilizza un PreparedStatement in batch e gestisce la transazione (Commit/Rollback).
+     * * @param playlistId L'ID della playlist da aggiornare
+     * @param trackIdsInOrder La lista degli ID dei brani nell'ordine esatto (0, 1, 2...)
+     * @return true se l'aggiornamento va a buon fine, false in caso di errore.
+     */
+    @Override
+    public boolean updateTrackPositions(int playlistId, List<Integer> trackIdsInOrder) {
+        String sql = "UPDATE playlist_tracks SET position = ? WHERE playlist_id = ? AND track_id = ?";
+        try (Connection conn = DatabaseManager.getConnection()) {
+            
+            //Disabilitiamo l'auto-commit per avviare la Transazione
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                
+                //Cicliamo la lista e prepariamo il batch di query
+                for (int i = 0; i < trackIdsInOrder.size(); i++) {
+                    pstmt.setInt(1, i);                       // position (l'indice del ciclo: 0, 1, 2...)
+                    pstmt.setInt(2, playlistId);              // playlist_id
+                    pstmt.setInt(3, trackIdsInOrder.get(i));  // track_id
+
+                    //Aggiungiamo la query al lotto di esecuzione
+                    pstmt.addBatch();
+                }
+
+                //Eseguiamo tutte le UPDATE in un colpo solo
+                pstmt.executeBatch();
+
+                //Se arriviamo qui senza eccezioni, confermiamo la transazione
+                conn.commit();
+                return true;
+
+            } catch (SQLException e) {
+                // Se qualsiasi UPDATE fallisce, annulliamo l'intera operazione
+                System.err.println("Errore durante l'update delle posizioni. Eseguo il Rollback...");
+                conn.rollback(); 
+                e.printStackTrace();
+                return false;
+            } finally {
+                //Ripristiniamo il comportamento standard della connessione
+                conn.setAutoCommit(true);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Errore di connessione al database in updateTrackPositions.");
+            e.printStackTrace();
+            return false;
+        }
+    }
     
 }
