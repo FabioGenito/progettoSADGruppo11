@@ -69,9 +69,20 @@ public class FakePlaylistDAO implements PlaylistDAOInterface {
 
     @Override
     public List<Track> getTracksByPlaylist(int playlistId) {
-        return new ArrayList<>(); 
+        List<Track> orderedTracks = new ArrayList<>();
+        
+        if (playlistTracks.containsKey(playlistId)) {
+            List<Integer> trackIds = playlistTracks.get(playlistId);
+            // Crea tracce simulate rispettando rigorosamente l'ordine della lista
+            for (Integer trackId : trackIds) {
+                Track t = new Track();
+                t.setId(trackId);
+                t.setTitle("Traccia Test " + trackId);
+                orderedTracks.add(t);
+            }
+        }
+        return orderedTracks;
     }
-    
     @Override
     public void updatePlaylistTrackOrder(int playlistId, List<Track> tracks) {
         if (playlistTracks.containsKey(playlistId)) {
