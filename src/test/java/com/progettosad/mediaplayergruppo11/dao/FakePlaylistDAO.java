@@ -82,4 +82,13 @@ public class FakePlaylistDAO implements PlaylistDAOInterface {
             playlistTracks.put(playlistId, newOrderIds);
         }
     }
+
+    @Override
+    public boolean updateTrackPositions(int playlistId, List<Integer> trackIdsInOrder) {
+        if (playlistTracks.containsKey(playlistId)) {
+            playlistTracks.put(playlistId, new ArrayList<>(trackIdsInOrder));
+            return true;
+        }
+        return false;
+    }
 }

@@ -25,6 +25,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import java.util.stream.Collectors;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -301,13 +302,10 @@ public class TrackTableController implements Initializable, Observer {
                     // C. Selezione della nuova riga e Notifica a schermo
                     Platform.runLater(() -> {
                         trackTableView.getSelectionModel().select(newIndex);
-                        
-                        if (mainShell != null){
-                            mainShell.showUndoNotification("Scaletta aggiornata!");
-                        }
                     });
             
                     success = true;
+                    saveNewTrackOrderInBackground(currentOpenPlaylist.getId());
                 }
                 
                 event.setDropCompleted(success);
@@ -529,5 +527,43 @@ public class TrackTableController implements Initializable, Observer {
                 }
             }
         });
+    }
+    
+    /**
+     * T-20/03: Salva il nuovo ordine in background estraendo gli ID dalla ObservableList.
+     */
+    private void saveNewTrackOrderInBackground(int currentPlaylistId) {
+        //Estrazione degli ID dalla tabella aggiornata
+        List<Integer> newOrderIds = trackTableView.getItems().stream()
+                .map(Track::getId)
+                .collect(Collectors.toList());
+
+        //Creazione del Task in background
+        Task<Boolean> saveTask = new Task<Boolean>() {
+            @Override
+            protected Boolean call() throws Exception {
+                PlaylistDAO daoInstance = new PlaylistDAO();
+                return daoInstance.updateTrackPositions(currentPlaylistId, newOrderIds);
+            }
+        };
+
+       //Feedback visivo quando avviene il salvataggio su DB
+        saveTask.setOnSucceeded(event -> {
+            boolean isSaved = saveTask.getValue();
+            if (isSaved) {
+                if (mainShell != null) {
+                    mainShell.showUndoNotification("Ordine salvato");
+                }
+            } else {
+                if (mainShell != null) {
+                    mainShell.showUndoNotification("Errore di salvataggio");
+                }
+            }
+        });
+
+        //Lancio del thread
+        Thread bgThread = new Thread(saveTask);
+        bgThread.setDaemon(true);
+        bgThread.start();
     }
 }
