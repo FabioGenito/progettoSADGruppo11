@@ -3,7 +3,6 @@ package com.progettosad.mediaplayergruppo11.command;
 import com.progettosad.mediaplayergruppo11.dao.FakePlaylistDAO;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +15,7 @@ class AddTrackCommandTest {
 
     @BeforeEach
     void setUp() {
-        fakeDAO = new FakePlaylistDAO();
+        this.fakeDAO = new FakePlaylistDAO();
         // Creiamo una playlist fittizia per avere un contesto valido
         fakeDAO.createPlaylist("Test Playlist", "cover.png");
     }
