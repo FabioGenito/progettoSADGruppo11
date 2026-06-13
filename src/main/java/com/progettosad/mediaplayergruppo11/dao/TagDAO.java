@@ -36,7 +36,6 @@ public class TagDAO implements TagDAOInterface {
 
     @Override
     public Tag insertTag(Tag tag) {
-        // Task 4: Logica di validazione nel backend
         validateTag(tag);
 
         try (Connection conn = DatabaseManager.getConnection();

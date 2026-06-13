@@ -13,7 +13,7 @@ import java.util.List;
  * @author gcucc
  */
 
-public class FakeTrackDAOTest {
+public class TrackDAOTest {
 
     // TEST CRUD: INSERT, UPDATE, DELETE, GET ALL
     @Test
