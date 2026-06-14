@@ -24,7 +24,7 @@ public class MoveTrackCommand implements Command{
         this.oldIndex = oldIndex;
         this.newIndex = newIndex;
         this.playlistId = playlistId;
-        this.currentTracks = new ArrayList<>(currentTracks);
+        this.currentTracks = currentTracks;
     }
     
     

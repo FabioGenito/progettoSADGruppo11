@@ -150,6 +150,9 @@ public class PlaybackEngine {
     
     /*
     * T-08/01: Metodo per determinare l'azione successiva usando l'iteratore
+    *T-21/01: Modifica della logica di avanzamento automatico.
+    *Calcola la traccia successiva leggendo la coda in tempo reale senza indici 
+    *statici.
     */
     
     public void nextTrack(){
@@ -158,14 +161,54 @@ public class PlaybackEngine {
             currentState.stop(this);
         }
         
-        //Verifica se l'iteratore ha un brano successivo
-        if(playlistIterator != null && playlistIterator.hasNext()){
-            Track newTrack=playlistIterator.next();
+        //Verifica le precondizioni: se manca la coda o il brano corrente restituisce
+        //un flag di errore
+        if(playlistIterator != null && playlistIterator.getQueue()== null || currentTrack == null){
+            stopTrack();
+            return;
+            }
+        List<Track> currentQueue = playlistIterator.getQueue();
+        
+        //Ricerca della posizione esatta del brano corrente
+        //effettuata confrontando l'ID univoco del brano per intercettare lo spostamento
+        //a runtime
+        int currentTrackIndex = -1;
+        for(int i =0; i<currentQueue.size(); i++){
+            if(currentQueue.get(i).getId()==currentTrack.getId()){
+                currentTrackIndex=i;
+                break;
+            }
+        }
+        
+        //Fallback di sizurezza. Se il codice non è più presente nella coda,
+        // si preserva l'ultimo indice noto memorizzato
+        if(currentTrackIndex==-1){
+            currentTrackIndex=playlistIterator.getCurrentIndex();
+        }
+        
+        //Sicronizzazione dell'iteratore con la posizione post-riordinamento
+        playlistIterator.setCurrentIndex(currentTrackIndex);
+        Track nextTrack=null;
+        
+        //comportamento coerente con la stategia attiva
+        if(currentStrategy != null){
+            nextTrack=currentStrategy.getNextTrack(currentQueue, currentTrackIndex);
+        }
+        
+        if(nextTrack == null && (currentTrackIndex +1) < currentQueue.size()){
+            nextTrack=currentQueue.get(currentTrackIndex + 1);
+        }
+        
+        if(nextTrack!= null){
+            int nextTrackIndex=currentQueue.indexOf(nextTrack);
+            if(nextTrackIndex != -1){
+                playlistIterator.setCurrentIndex(nextTrackIndex);
+            }
 
             //T-08/02: il riutilizzo di playTrack garantisce che la logica asincrona
             //del DB venga ereditata automaticamente
-//T - 08/01: Backend – Logica Next e Coda di Riproduzione)
-            playTrack(newTrack);
+            //T - 08/01: Backend – Logica Next e Coda di Riproduzione)
+            playTrack(nextTrack);
         }else{
             //Nessun brano successivo: stoppa la ripdouzione
             stopTrack();

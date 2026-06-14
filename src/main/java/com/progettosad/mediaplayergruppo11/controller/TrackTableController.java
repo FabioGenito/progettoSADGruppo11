@@ -303,6 +303,7 @@ public class TrackTableController implements Initializable, Observer {
                     // C. Selezione della nuova riga e Notifica a schermo
                     Platform.runLater(() -> {
                         trackTableView.getSelectionModel().select(newIndex);
+                        trackTableView.refresh();
                     });
             
                     success = true;
