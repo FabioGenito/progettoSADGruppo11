@@ -1,0 +1,83 @@
+/*
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to edit this template
+*/
+/* 
+    Created on : 14 giu 2026, 01:58:33
+    Author     : Fabio
+*/
+
+/* Stili globali del Form */
+.form-root {
+    -fx-background-color: #121212;
+    -fx-font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* Campi di testo standard */
+.custom-text-field {
+    -fx-background-color: #282828;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #777777;
+    -fx-background-radius: 5;
+    -fx-border-color: transparent;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 5;
+}
+
+/* Stato di errore per il TextField dei Tag */
+.text-field-error {
+    -fx-border-color: #ff3333;
+}
+
+/* Bottoni */
+.btn-back {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.btn-primary {
+    -fx-background-color: #1db954;
+    -fx-text-fill: black;
+    -fx-background-radius: 50;
+    -fx-cursor: hand;
+}
+
+.btn-secondary {
+    -fx-background-color: #1db954;
+    -fx-text-fill: black;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+/* Sezione Tag */
+.tag-pane-container {
+    -fx-background-color: #181818;
+    -fx-padding: 10;
+    -fx-background-radius: 5;
+}
+
+/* Struttura della Chip del Tag */
+.tag-chip {
+    -fx-background-color: #3e3e3e;
+    -fx-background-radius: 15;
+    -fx-padding: 4 10 4 10;
+    -fx-alignment: center;
+    -fx-spacing: 8;
+}
+
+.tag-chip-label {
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+}
+
+.tag-chip-remove-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #b3b3b3;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+

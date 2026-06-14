@@ -6,6 +6,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -13,9 +14,9 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="700.0" prefWidth="450.0" style="-fx-background-color: #121212; -fx-font-family: 'Inter', 'Segoe UI', sans-serif;" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.FormController">
+<AnchorPane prefHeight="800.0" prefWidth="450.0" styleClass="form-root" stylesheets="@../../../styles/FormStyle.css" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.FormController">
    <children>
-      <VBox alignment="TOP_CENTER" spacing="30.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <VBox alignment="TOP_CENTER" spacing="25.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <padding>
             <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
          </padding>
@@ -23,25 +24,19 @@
             
             <HBox alignment="CENTER_LEFT">
                <children>
-                  <Button fx:id="backButton" mnemonicParsing="false" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 0; -fx-cursor: hand;" text="← Annulla">
-                     <font>
-                        <Font name="System Bold" size="16.0" />
-                     </font>
+                  <Button fx:id="backButton" mnemonicParsing="false" onAction="#navigateToHome" styleClass="btn-back" text="← Annulla">
+                     <font><Font name="System Bold" size="16.0" /></font>
                   </Button>
                   <Region HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
 
             <Label text="Dettagli Traccia" textFill="WHITE">
-               <font>
-                  <Font name="System Bold" size="24.0" />
-               </font>
-               <VBox.margin>
-                  <Insets bottom="10.0" />
-               </VBox.margin>
+               <font><Font name="System Bold" size="24.0" /></font>
+               <VBox.margin><Insets bottom="5.0" /></VBox.margin>
             </Label>
 
-            <GridPane hgap="15.0" vgap="25.0">
+            <GridPane hgap="15.0" vgap="20.0">
               <columnConstraints>
                 <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" maxWidth="120.0" minWidth="10.0" prefWidth="90.0" />
                 <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" maxWidth="300.0" minWidth="10.0" prefWidth="250.0" />
@@ -56,59 +51,54 @@
                 <RowConstraints minHeight="10.0" prefHeight="35.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  
-                  <Label text="Titolo *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                     <font><Font name="System Bold" size="14.0" /></font>
-                  </Label>
-                  <TextField fx:id="titleField" promptText="Es. Oggi Non C'è Il Sole" style="-fx-background-color: #282828; -fx-text-fill: white; -fx-prompt-text-fill: #777777; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                  <Label text="Titolo *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="0"><font><Font name="System Bold" size="14.0" /></font></Label>
+                  <TextField fx:id="titleField" promptText="Es. Oggi Non C'è Il Sole" styleClass="custom-text-field" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-                  <Label text="Artista *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="1">
-                     <font><Font name="System Bold" size="14.0" /></font>
-                  </Label>
-                  <TextField fx:id="artistField" promptText="Es. MadMan" style="-fx-background-color: #282828; -fx-text-fill: white; -fx-prompt-text-fill: #777777; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label text="Artista *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="1"><font><Font name="System Bold" size="14.0" /></font></Label>
+                  <TextField fx:id="artistField" promptText="Es. MadMan" styleClass="custom-text-field" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                  <Label text="Album" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="2">
-                     <font><Font name="System Bold" size="14.0" /></font>
-                  </Label>
-                  <TextField fx:id="albumField" promptText="Es. MM Vol. 5" style="-fx-background-color: #282828; -fx-text-fill: white; -fx-prompt-text-fill: #777777; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Label text="Album" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="2"><font><Font name="System Bold" size="14.0" /></font></Label>
+                  <TextField fx:id="albumField" promptText="Es. MM Vol. 5" styleClass="custom-text-field" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-                  <Label text="Durata *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="3">
-                     <font><Font name="System Bold" size="14.0" /></font>
-                  </Label>
+                  <Label text="Durata *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="3"><font><Font name="System Bold" size="14.0" /></font></Label>
                   <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
                      <children>
-                        <TextField fx:id="minuteField" prefWidth="65.0" promptText="Min" style="-fx-background-color: #282828; -fx-text-fill: white; -fx-prompt-text-fill: #777777; -fx-background-radius: 5; -fx-alignment: CENTER;" />
-                        <Label text=":" textFill="WHITE">
-                           <font><Font name="System Bold" size="18.0" /></font>
-                        </Label>
-                        <TextField fx:id="secondField" prefWidth="65.0" promptText="Sec" style="-fx-background-color: #282828; -fx-text-fill: white; -fx-prompt-text-fill: #777777; -fx-background-radius: 5; -fx-alignment: CENTER;" />
+                        <TextField fx:id="minuteField" prefWidth="65.0" promptText="Min" style="-fx-alignment: CENTER;" styleClass="custom-text-field" />
+                        <Label text=":" textFill="WHITE"><font><Font name="System Bold" size="18.0" /></font></Label>
+                        <TextField fx:id="secondField" prefWidth="65.0" promptText="Sec" style="-fx-alignment: CENTER;" styleClass="custom-text-field" />
                      </children>
                   </HBox>
 
-                  <Label text="Anno *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="4">
-                     <font><Font name="System Bold" size="14.0" /></font>
-                  </Label>
-                  <TextField fx:id="yearField" promptText="Es. 2026" style="-fx-background-color: #282828; -fx-text-fill: white; -fx-prompt-text-fill: #777777; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                  <Label text="Anno *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="4"><font><Font name="System Bold" size="14.0" /></font></Label>
+                  <TextField fx:id="yearField" promptText="Es. 2026" styleClass="custom-text-field" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
-                  <Label text="Genere *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="5">
-                     <font><Font name="System Bold" size="14.0" /></font>
-                  </Label>
-                  <TextField fx:id="genreField" promptText="Es. Rap" style="-fx-background-color: #282828; -fx-text-fill: white; -fx-prompt-text-fill: #777777; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                  <Label text="Genere *" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="5"><font><Font name="System Bold" size="14.0" /></font></Label>
+                  <TextField fx:id="genreField" promptText="Es. Rap" styleClass="custom-text-field" GridPane.columnIndex="1" GridPane.rowIndex="5" />
 
-                  <Label text="URL Cover" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="6">
-                     <font><Font name="System Bold" size="14.0" /></font>
-                  </Label>
-                  <TextField fx:id="imageField" promptText="Es. /images/cover.png" style="-fx-background-color: #282828; -fx-text-fill: white; -fx-prompt-text-fill: #777777; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-
+                  <Label text="URL Cover" textFill="#b3b3b3" GridPane.columnIndex="0" GridPane.rowIndex="6"><font><Font name="System Bold" size="14.0" /></font></Label>
+                  <TextField fx:id="imageField" promptText="Es. /images/cover.png" styleClass="custom-text-field" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                </children>
             </GridPane>
 
+            <VBox fx:id="tagSectionContainer" spacing="10.0">
+               <children>
+                  <Label text="Tag Associati" textFill="#b3b3b3"><font><Font name="System Bold" size="14.0" /></font></Label>
+                  <FlowPane fx:id="tagsFlowPane" hgap="8.0" prefHeight="65.0" prefWidth="390.0" styleClass="tag-pane-container" vgap="8.0" />
+                  <HBox alignment="CENTER_LEFT" spacing="10.0">
+                     <children>
+                        <TextField fx:id="newTagField" promptText="Aggiungi un tag..." styleClass="custom-text-field" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="addTagButton" mnemonicParsing="false" onAction="#handleAddTag" styleClass="btn-secondary" text="Aggiungi">
+                           <font><Font name="System Bold" size="13.0" /></font>
+                        </Button>
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+
             <Region VBox.vgrow="ALWAYS" />
 
-            <Button fx:id="submitButton" disable="true" mnemonicParsing="false" prefHeight="45.0" prefWidth="250.0" style="-fx-background-color: #1db954; -fx-text-fill: black; -fx-background-radius: 50; -fx-cursor: hand;" text="Aggiungi Traccia">
-               <font>
-                  <Font name="System Bold" size="16.0" />
-               </font>
+            <Button fx:id="submitButton" disable="true" mnemonicParsing="false" onAction="#handleSaveTrack" prefHeight="45.0" prefWidth="250.0" styleClass="btn-primary" text="Aggiungi Traccia">
+               <font><Font name="System Bold" size="16.0" /></font>
             </Button>
 
          </children>
