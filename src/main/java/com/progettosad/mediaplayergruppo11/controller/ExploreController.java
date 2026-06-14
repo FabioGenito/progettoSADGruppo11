@@ -11,7 +11,7 @@ import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
-import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
+import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;

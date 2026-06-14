@@ -3,8 +3,8 @@ package com.progettosad.mediaplayergruppo11.controller;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
-import com.progettosad.mediaplayergruppo11.utils.DialogFactory;
+import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
+import com.progettosad.mediaplayergruppo11.view.dialogs.PlaylistDialog;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
@@ -71,7 +71,7 @@ public class SidebarController implements Initializable, Observer {
 
     @FXML
     private void handleCreatePlaylist() {
-        DialogFactory.showNewPlaylistDialog().ifPresent(result -> {
+        PlaylistDialog.showNewPlaylistDialog().ifPresent(result -> {
             String name = result.getKey();
             String image = result.getValue();
 

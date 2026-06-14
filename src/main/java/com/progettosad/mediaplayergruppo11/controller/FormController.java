@@ -5,7 +5,7 @@ import com.progettosad.mediaplayergruppo11.dao.TagDAOInterface;
 import com.progettosad.mediaplayergruppo11.model.Tag;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
-import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
+import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

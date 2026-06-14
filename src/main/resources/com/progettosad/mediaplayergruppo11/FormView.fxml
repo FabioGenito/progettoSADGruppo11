@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="800.0" prefWidth="450.0" styleClass="form-root" stylesheets="@../../../styles/FormStyle.css" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.FormController">
+<AnchorPane prefHeight="800.0" prefWidth="450.0" styleClass="form-root" stylesheets="@view/styles/FormStyle.css" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.FormController">
    <children>
       <VBox alignment="TOP_CENTER" spacing="25.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <padding>
