@@ -21,7 +21,8 @@ import java.util.List;
  */
 
 public class TrackDAO implements TrackDAOInterface {
-
+private static final String GET_MOST_PLAYED_TRACKS_BY_USER =
+    "SELECT * FROM tracks ORDER BY play_count DESC LIMIT ?";
     private static final String INSERT_TRACK = "INSERT INTO tracks (title, artist, length, album, publication_year, genre, image) VALUES (?,?,?,?,?,?,?)";
     private static final String DELETE_TRACK = "DELETE FROM tracks WHERE id = ?";
     private static final String INCREMENT_PLAY_COUNT = "UPDATE tracks SET play_count = play_count + 1 WHERE id = ?";
@@ -308,5 +309,24 @@ public class TrackDAO implements TrackDAOInterface {
         }
         return trackList;
     }
-    
+        @Override
+    public List<Track> getMostPlayedTracksByUser(int userId, int limit) {
+        List<Track> result = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(GET_MOST_PLAYED_TRACKS_BY_USER)) {
+ 
+            pstmt.setInt(1, limit);
+ 
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRowToTrack(rs));   // riusa il metodo helper già esistente
+                }
+            }
+        } catch (SQLException e) {
+            // Non propaghiamo: restituiamo lista vuota (gestione "nuovo utente")
+            System.err.println("TrackDAO.getMostPlayedTracksByUser – errore SQL: " + e.getMessage());
+        }
+        return result;
+    }
+
 }

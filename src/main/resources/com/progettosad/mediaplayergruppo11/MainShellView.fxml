@@ -86,6 +86,33 @@
 
                   <Region prefHeight="10.0" />
 
+                  <!-- Sezione: brani piu' ascoltati -->
+                  <VBox fx:id="mostPlayedTracksSection" spacing="8.0" managed="false" visible="false">
+                     <Label text="I tuoi brani piu' ascoltati" textFill="WHITE">
+                        <font><Font name="System Bold" size="22.0" /></font>
+                     </Label>
+                     <ScrollPane fitToHeight="true" fitToWidth="true" minHeight="200.0"
+                                 style="-fx-background-color: transparent; -fx-control-inner-background: #121212; -fx-hbar-policy: NEVER; -fx-vbar-policy: NEVER;">
+                        <content>
+                           <HBox fx:id="mostPlayedTracksContainer" alignment="CENTER_LEFT" spacing="15.0" />
+                        </content>
+                     </ScrollPane>
+                  </VBox>
+
+                  <!-- Sezione: playlist piu' ascoltate -->
+                  <VBox fx:id="mostPlayedPlaylistsSection" spacing="8.0" managed="false" visible="false">
+                     <Label text="Le tue playlist piu' ascoltate" textFill="WHITE">
+                        <font><Font name="System Bold" size="22.0" /></font>
+                     </Label>
+                     <ScrollPane fitToHeight="true" fitToWidth="true" minHeight="200.0"
+                                 style="-fx-background-color: transparent; -fx-control-inner-background: #121212; -fx-hbar-policy: NEVER; -fx-vbar-policy: NEVER;">
+                        <content>
+                           <HBox fx:id="mostPlayedPlaylistsContainer" alignment="CENTER_LEFT" spacing="15.0" />
+                        </content>
+                     </ScrollPane>
+                  </VBox>
+
+
                   <Label text="Tutti i brani" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="22.0" />

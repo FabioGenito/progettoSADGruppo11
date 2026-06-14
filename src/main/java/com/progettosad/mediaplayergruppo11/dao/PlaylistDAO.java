@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PlaylistDAO implements PlaylistDAOInterface {
-    
+    private static final String GET_MOST_PLAYED_PLAYLISTS_BY_USER =
+    "SELECT id, name, image FROM playlist ORDER BY id DESC LIMIT ?";
     private static final String INSERT_PLAYLIST = "INSERT INTO playlist(name, image) VALUES (?, ?)";
     private static final String SELECT_ALL_PLAYLISTS = "SELECT id, name, image FROM playlist ORDER BY id ASC";
     private static final String ADD_TRACK_TO_PLAYLIST = "INSERT INTO playlist_tracks (playlist_id, track_id) VALUES (?, ?)";
@@ -254,4 +255,29 @@ public class PlaylistDAO implements PlaylistDAOInterface {
         }
     }
     
+    //T-16/01
+    @Override
+    public List<Playlist> getMostPlayedPlaylistsByUser(int userId, int limit) {
+        List<Playlist> result = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(GET_MOST_PLAYED_PLAYLISTS_BY_USER)) {
+ 
+            pstmt.setInt(1, limit);
+ 
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    result.add(new Playlist(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("image")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            //restituiamo lista vuota (gestione "nuovo utente")
+            System.err.println("PlaylistDAO.getMostPlayedPlaylistsByUser – errore SQL: " + e.getMessage());
+        }
+        return result;
+    }
+
 }

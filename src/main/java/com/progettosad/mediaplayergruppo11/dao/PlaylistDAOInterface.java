@@ -22,4 +22,5 @@ public interface PlaylistDAOInterface {
     List<Track> getTracksByPlaylist(int playlistId);
     void updatePlaylistTrackOrder(int playlistId, List<Track> tracks);
     boolean updateTrackPositions(int playlistId, List<Integer> trackIdsInOrder);
+    List<Playlist> getMostPlayedPlaylistsByUser(int userId, int limit);
 }
