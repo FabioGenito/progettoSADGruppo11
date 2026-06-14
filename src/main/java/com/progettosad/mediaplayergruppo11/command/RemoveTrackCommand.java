@@ -54,35 +54,19 @@ public class RemoveTrackCommand implements Command{
     @Override
     public void undo() {
          try {
-
         playlistDAO.addTrackToPlaylist(
                 playlistId,
                 trackId,
                 originalIndex
         );
-
-        System.out.println(
-                "Command Undo: Traccia "
-                + trackId
-                + " reinserita nella posizione "
-                + originalIndex
-        );
-
+        System.out.println("Command Undo: Traccia " + trackId + " reinserita nella posizione " + originalIndex);
+        
         // Observer Pattern
-        TrackManager.getInstance()
-                .setState(
-                        "REMOVED_FROM_PLAYLIST_"
-                        + playlistId
-                );
-
-    } catch (Exception e) {
-
-        System.err.println(
-                "Errore durante il ripristino."
-        );
-
-        e.printStackTrace();
-    }
+        TrackManager.getInstance().setState("REMOVED_FROM_PLAYLIST_" + playlistId);
+        } catch (Exception e) {
+            System.err.println("Errore durante il ripristino.");
+            e.printStackTrace();
+        }
     }
 }
     

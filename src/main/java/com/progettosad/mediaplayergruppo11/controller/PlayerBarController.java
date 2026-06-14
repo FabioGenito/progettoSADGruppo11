@@ -9,12 +9,9 @@ import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.strategy.LoopStrategy;
 import com.progettosad.mediaplayergruppo11.model.strategy.SequentialStrategy;
 import com.progettosad.mediaplayergruppo11.model.strategy.ShuffleStrategy;
-import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
-import com.progettosad.mediaplayergruppo11.utils.TimeUtils;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -39,7 +36,6 @@ public class PlayerBarController implements Initializable {
     @FXML private ProgressBar playerProgressBar;
     @FXML private Button playerButton;
     @FXML private Button skipButton;
-    @FXML private Button backButton;
     @FXML private ToggleButton btnShuffle;
     @FXML private ToggleButton btnLoop;
 
@@ -68,7 +64,7 @@ public class PlayerBarController implements Initializable {
         engine.currentTimeProperty().addListener((observable, oldTime, newTime) -> {
             Platform.runLater(() -> {
                 if (currentTrackTime != null) {
-                    currentTrackTime.setText(TimeUtils.formatSecondsToMinutes(newTime.intValue()));
+                    currentTrackTime.setText(formatTime(newTime.intValue()));   
                 }
             });
         });
@@ -165,4 +161,14 @@ public class PlayerBarController implements Initializable {
             }
         }
     }
+    
+    /**
+    * Converte i secondi correnti di riproduzione nel formato standard "MM:SS" per la UI.
+    */
+   private String formatTime(int totalSeconds) {
+       if (totalSeconds < 0) return "00:00";
+       int minuti = totalSeconds / 60;
+       int secondi = totalSeconds % 60;
+       return String.format("%02d:%02d", minuti, secondi);
+   }
 }

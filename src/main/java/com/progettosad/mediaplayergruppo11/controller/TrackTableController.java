@@ -14,7 +14,7 @@ import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
+import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;

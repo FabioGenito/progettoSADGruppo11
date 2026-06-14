@@ -19,6 +19,7 @@ public class PlaylistDAO implements PlaylistDAOInterface {
     private static final String ADD_TRACK_TO_PLAYLIST = "INSERT INTO playlist_tracks (playlist_id, track_id) VALUES (?, ?)";
     private static final String REMOVE_TRACK_FROM_PLAYLIST = "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?";
     private static final String SELECT_TRACKS_BY_PLAYLIST = "SELECT t.* FROM tracks t " + "JOIN playlist_tracks pt ON t.id = pt.track_id " + "WHERE pt.playlist_id = ? " + "ORDER BY pt.position ASC";
+    private static final String ADD_TRACK_TO_PLAYLIST_WITH_POSITION ="INSERT INTO playlist_tracks(playlist_id, track_id, position)VALUES (?, ?, ?)";
     
     /**
      * Crea una nuova playlist nel database e ne recupera l'ID generato automaticamente.
@@ -116,6 +117,28 @@ public class PlaylistDAO implements PlaylistDAOInterface {
                 );
             }
             throw new RuntimeException("Errore SQL durante l'aggiunta della traccia alla playlist", e);
+        }
+    }
+    
+    
+    /**
+     * T - 15/01 e T - 15/02
+     * aggiungo un overload ad addTrackPLaylist perché la gestione dell'UNDO è necessario tenere traccia della posizione in playlist
+     * @param playlistId
+     * @param trackId
+     * @param position
+     * @return 
+     */
+    public boolean addTrackToPlaylist(int playlistId, int trackId, int position) {
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(ADD_TRACK_TO_PLAYLIST_WITH_POSITION)) {
+                pstmt.setInt(1, playlistId);
+                pstmt.setInt(2, trackId);
+                pstmt.setInt(3, position);
+                return pstmt.executeUpdate() == 1;
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore SQL durante il ripristino della traccia", e);
         }
     }
 

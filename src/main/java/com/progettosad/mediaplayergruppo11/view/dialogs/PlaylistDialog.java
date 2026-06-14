@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.progettosad.mediaplayergruppo11.utils;
+package com.progettosad.mediaplayergruppo11.view.dialogs;
 
 import javafx.scene.control.*;
 import java.util.Optional;
@@ -17,7 +17,7 @@ import javafx.scene.layout.GridPane;
  * @author Fabio
  */
 
-public class DialogFactory {
+public class PlaylistDialog {
 
     public static Optional<Pair<String, String>> showNewPlaylistDialog() {
         Dialog<Pair<String, String>> dialog = new Dialog<>();

@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: #121212; -fx-font-family: 'Inter', 'Segoe UI', sans-serif;" stylesheets="@../../../styles/HomeStyle.css" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.MainShellController">
+<AnchorPane prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: #121212; -fx-font-family: 'Inter', 'Segoe UI', sans-serif;" stylesheets="@view/styles/HomeStyle.css" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.MainShellController">
     <children>
       
         <BorderPane fx:id="mainBorderPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
