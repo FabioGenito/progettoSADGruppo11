@@ -5,6 +5,7 @@
 package com.progettosad.mediaplayergruppo11.controller;
 
 import com.progettosad.mediaplayergruppo11.command.MoveTrackCommand;
+import com.progettosad.mediaplayergruppo11.command.RemoveTrackCommand;
 import com.progettosad.mediaplayergruppo11.command.UndoManager;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
@@ -432,36 +433,85 @@ public class TrackTableController implements Initializable, Observer {
     
     /**
      * T-10/02 e T-10/03
-     * Gestisce la rimozione asincrona del brano dalla playlist corrente.
+     * Gestisce la rimozione asincrona del brano dalla playlist corrente
+     * T-15/01
+     * consente di revocare l'azione di rimozione di un brano dalla playlist.
      */
-    private void handleRemoveTrackFromPlaylist() {
-        Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
-        if (selectedTrack == null || currentOpenPlaylist == null) return;
+private void handleRemoveTrackFromPlaylist() {
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                PlaylistDAO dao = new PlaylistDAO();
-                boolean success = dao.removeTrackFromPlaylist(currentOpenPlaylist.getId(), selectedTrack.getId());
+    Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
 
-                if (success) {
-                    Platform.runLater(() -> {
-                        // T-10/03: Rimozione istantanea visiva dalla ObservableList
-                        trackTableView.getItems().remove(selectedTrack);
-                        AlertUtils.show(Alert.AlertType.INFORMATION, "Rimozione completata", "Traccia rimossa dalla playlist con successo!");
-                    });
-                    
-                    // T-10/03: Lancio evento tramite l'Observer Pattern del progetto
-                    if (subject instanceof com.progettosad.mediaplayergruppo11.model.TrackManager) {
-                        ((com.progettosad.mediaplayergruppo11.model.TrackManager) subject).setState("REMOVED_FROM_PLAYLIST_" + currentOpenPlaylist.getId());
-                    }
-                }
-            } catch (Exception ex) {
-                Platform.runLater(() -> {
-                    AlertUtils.show(Alert.AlertType.ERROR, "Errore", "Impossibile rimuovere il brano: " + ex.getMessage());
-                });
-            }
-        });
+    if (selectedTrack == null || currentOpenPlaylist == null) {
+        return;
     }
+
+    // T-15/01: Salvataggio della posizione originale per consentire il corretto Undo
+    int originalIndex =
+            trackTableView.getSelectionModel().getSelectedIndex();
+
+    CompletableFuture.runAsync(() -> {
+
+        try {
+
+            PlaylistDAO dao = new PlaylistDAO();
+
+            // T-15/01: Creazione del Command che incapsula l'operazione
+            RemoveTrackCommand cmd =
+                    new RemoveTrackCommand(
+                            selectedTrack.getId(),
+                            currentOpenPlaylist.getId(),
+                            originalIndex,
+                            dao
+                    );
+
+            // T-15/01: Salvataggio nella history dell'UndoManager
+            UndoManager.getInstance().saveCommand(cmd);
+
+            // T-15/01: Esecuzione della rimozione tramite Command Pattern
+            cmd.execute();
+
+            Platform.runLater(() -> {
+
+                // T-10/03: Rimozione istantanea visiva dalla ObservableList
+                trackTableView.getItems().remove(selectedTrack);
+
+                // T-15/02: Notifica parametrizzata con possibilità di Undo
+                if (mainShell != null) {
+                    mainShell.showUndoNotification("Traccia rimossa dalla playlist");
+                }
+             else {
+                if (mainShell != null) {
+                    mainShell.showUndoNotification("Errore di salvataggio");
+                }}
+               
+
+            });
+
+            // T-10/03: Lancio evento tramite l'Observer Pattern del progetto
+            if (subject instanceof com.progettosad.mediaplayergruppo11.model.TrackManager) {
+
+                ((com.progettosad.mediaplayergruppo11.model.TrackManager) subject)
+                        .setState(
+                                "REMOVED_FROM_PLAYLIST_"
+                                + currentOpenPlaylist.getId()
+                        );
+            }
+
+        } catch (Exception ex) {
+
+            Platform.runLater(() -> {
+
+                AlertUtils.show(
+                        Alert.AlertType.ERROR,
+                        "Errore",
+                        "Impossibile rimuovere il brano: "
+                                + ex.getMessage()
+                );
+
+            });
+        }
+    });
+}
 
     /***
      * Metodo centralizzato per aprire il form di traccia.
