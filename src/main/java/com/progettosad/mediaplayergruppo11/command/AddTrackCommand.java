@@ -5,6 +5,7 @@
 package com.progettosad.mediaplayergruppo11.command;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
+import com.progettosad.mediaplayergruppo11.model.TrackManager;
 /**
  *
  * @author gcucc
@@ -16,9 +17,9 @@ import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistExcep
 public class AddTrackCommand implements Command {
     private final int trackId;
     private final int playlistId;
-    private final PlaylistDAOInterface  dao; // Receiver
+    private final PlaylistDAOInterface dao;
 
-    public AddTrackCommand(int trackId, int playlistId, PlaylistDAOInterface  dao) {
+    public AddTrackCommand(int trackId, int playlistId, PlaylistDAOInterface dao) {
         this.trackId = trackId;
         this.playlistId = playlistId;
         this.dao = dao;
@@ -31,8 +32,9 @@ public class AddTrackCommand implements Command {
             System.out.println("Command: Traccia " + trackId + " aggiunta alla playlist " + playlistId);
         } catch (TrackAlreadyInPlaylistException e) {
             System.err.println("Impossibile eseguire: Traccia già presente.");
-            throw e; // Rilanciamo l'eccezione affinché il Client (Controller) possa intercettarla e mostrare un alert
+            throw e; 
         } catch (Exception e) {
+            System.err.println("Errore durante l'aggiunta della traccia.");
             e.printStackTrace();
         }
     }
@@ -45,9 +47,7 @@ public class AddTrackCommand implements Command {
             System.out.println("Command Undo: Traccia " + trackId + " rimossa dalla playlist " + playlistId);
             
             // L'OBSERVER: Avvisa l'interfaccia grafica che il brano non c'è più
-            com.progettosad.mediaplayergruppo11.model.TrackManager.getInstance()
-                  .setState("REMOVED_FROM_PLAYLIST_" + playlistId);
-                  
+            TrackManager.getInstance().setState("REMOVED_FROM_PLAYLIST_" + playlistId);                  
         } catch (Exception e) {
             System.err.println("Errore durante il ripristino dello stato.");
             e.printStackTrace();

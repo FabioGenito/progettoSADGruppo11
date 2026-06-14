@@ -4,7 +4,7 @@
  */
 package com.progettosad.mediaplayergruppo11.command;
 
-import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
+import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
 
 /**
@@ -16,9 +16,9 @@ public class RemoveTrackCommand implements Command{
     private final int trackId;
     private final int playlistId;
     private final int originalIndex;    
-    private final PlaylistDAO playlistDAO;
+    private final PlaylistDAOInterface playlistDAO;
 
-    public RemoveTrackCommand(int trackId, int playlistId, int originalIndex, PlaylistDAO playlistDAO) {
+    public RemoveTrackCommand(int trackId, int playlistId, int originalIndex, PlaylistDAOInterface playlistDAO) {
         this.trackId = trackId;
         this.playlistId = playlistId;
         this.originalIndex = originalIndex;
@@ -28,25 +28,11 @@ public class RemoveTrackCommand implements Command{
     @Override
     public void execute() {
          try {
-
-            playlistDAO.removeTrackFromPlaylist(
-                    playlistId,
-                    trackId
-            );
-
-            System.out.println(
-                    "Command: Traccia "
-                    + trackId
-                    + " rimossa dalla playlist "
-                    + playlistId
-            );
-
+            playlistDAO.removeTrackFromPlaylist(playlistId,trackId);
+            System.out.println("Command: Traccia " + trackId + " rimossa dalla playlist " + playlistId);
+            TrackManager.getInstance().setState("REMOVED_FROM_PLAYLIST_" + playlistId);
         } catch (Exception e) {
-
-            System.err.println(
-                    "Errore durante la rimozione della traccia."
-            );
-
+            System.err.println("Errore durante la rimozione della traccia.");
             e.printStackTrace();
         }
     }
@@ -54,15 +40,10 @@ public class RemoveTrackCommand implements Command{
     @Override
     public void undo() {
          try {
-        playlistDAO.addTrackToPlaylist(
-                playlistId,
-                trackId,
-                originalIndex
-        );
+        playlistDAO.addTrackToPlaylist(playlistId, trackId, originalIndex);
         System.out.println("Command Undo: Traccia " + trackId + " reinserita nella posizione " + originalIndex);
-        
+        TrackManager.getInstance().setState("TRACK_RESTORED_PLAYLIST_" + playlistId);
         // Observer Pattern
-        TrackManager.getInstance().setState("REMOVED_FROM_PLAYLIST_" + playlistId);
         } catch (Exception e) {
             System.err.println("Errore durante il ripristino.");
             e.printStackTrace();

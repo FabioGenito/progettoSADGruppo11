@@ -99,58 +99,52 @@ public class PlaylistDAO implements PlaylistDAOInterface {
      */
     @Override
     public boolean addTrackToPlaylist(int playlistId, int trackId) {
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(ADD_TRACK_TO_PLAYLIST)) {
-
-            pstmt.setInt(1, playlistId);
-            pstmt.setInt(2, trackId);
-
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows == 1;
-
-        } catch (SQLException e) {
-            // "23505" è il codice di stato PostgreSQL nativo per UNIQUE_VIOLATION.
-            // Identifica il tentativo di inserimento di un record duplicato nella tabella di giunzione.
-            if ("23505".equals(e.getSQLState())) {
-                throw new TrackAlreadyInPlaylistException(
-                    "La traccia con ID " + trackId + " è già presente nella playlist con ID " + playlistId
-                );
-            }
-            throw new RuntimeException("Errore SQL durante l'aggiunta della traccia alla playlist", e);
-        }
+        return saveTrackToPlaylist(playlistId, trackId, null);
     }
+    
     /**
      * T - 15/01 e T - 15/02
-     * aggiungo un overload ad addTrackPLaylist perché la gestione dell'UNDO è necessario tenere traccia della posizione in playlist
+     * Overload di addTrackPLaylist per getire l'UNDO sfruttando la posizione della traccia nella playlist
      * @param playlistId
      * @param trackId
      * @param position
      * @return 
      */
-public boolean addTrackToPlaylist(
-        int playlistId,
-        int trackId,
-        int position) {
-
-    try (Connection conn = DatabaseManager.getConnection();
-         PreparedStatement pstmt =
-                 conn.prepareStatement(
-                         ADD_TRACK_TO_PLAYLIST_WITH_POSITION)) {
-
-        pstmt.setInt(1, playlistId);
-        pstmt.setInt(2, trackId);
-        pstmt.setInt(3, position);
-
-        return pstmt.executeUpdate() == 1;
-
-    } catch (SQLException e) {
-
-        throw new RuntimeException(
-                "Errore SQL durante il ripristino della traccia",
-                e);
+    @Override
+    public boolean addTrackToPlaylist(int playlistId, int trackId, int position) {
+        return saveTrackToPlaylist(playlistId, trackId, position);
     }
-}
+    
+    /**
+     * Metodo privato di helper che centralizza la logica di inserimento ed errore.
+     */
+    private boolean saveTrackToPlaylist(int playlistId, int trackId, Integer position) {
+        // Sceglie la query corretta in base alla presenza o meno della posizione
+        String query = (position == null) ? ADD_TRACK_TO_PLAYLIST : ADD_TRACK_TO_PLAYLIST_WITH_POSITION;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setInt(1, playlistId);
+            pstmt.setInt(2, trackId);
             
+            // Se la posizione è presente, imposta il terzo parametro
+            if (position != null) {
+                pstmt.setInt(3, position);
+            }
+
+            return pstmt.executeUpdate() == 1;
+
+        } catch (SQLException e) {
+            // Centralizzazione della gestione dell'errore (valida ora per entrambi i flussi)
+            if ("23505".equals(e.getSQLState())) {
+                throw new TrackAlreadyInPlaylistException(
+                    "La traccia con ID " + trackId + " è già presente nella playlist con ID " + playlistId
+                );
+            }
+            throw new RuntimeException("Errore SQL durante l'operazione sulla playlist", e);
+        }
+    }
 
     /**
      * Rimuove l'associazione tra una traccia e una playlist.
