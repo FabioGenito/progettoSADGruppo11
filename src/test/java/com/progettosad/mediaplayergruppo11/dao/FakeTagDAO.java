@@ -4,6 +4,7 @@
  */
 package com.progettosad.mediaplayergruppo11.dao;
 
+import com.progettosad.mediaplayergruppo11.dao.TagDAOInterface;
 import com.progettosad.mediaplayergruppo11.model.Tag;
 import java.util.ArrayList;
 import java.util.HashMap;

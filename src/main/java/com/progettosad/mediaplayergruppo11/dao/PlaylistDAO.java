@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PlaylistDAO implements PlaylistDAOInterface {
     
@@ -43,11 +44,9 @@ public class PlaylistDAO implements PlaylistDAOInterface {
             statement.setString(2, image); 
 
             int affectedRows = statement.executeUpdate();
-
             if (affectedRows == 0) {
                 throw new SQLException("Creazione Playlist fallita, nessuna riga inserita.");
             }
-
             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     int generatedId = generatedKeys.getInt(1);
@@ -56,7 +55,6 @@ public class PlaylistDAO implements PlaylistDAOInterface {
                     throw new SQLException("ID Playlist non generato");
                 }
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("Errore durante la creazione Playlist nel DB", e);
         }
@@ -71,10 +69,9 @@ public class PlaylistDAO implements PlaylistDAOInterface {
     @Override
     public List<Playlist> getAllPlaylists() {
         List<Playlist> listaPlaylist = new ArrayList<>();     
-        try (
-                Connection connection = DatabaseManager.getConnection();
-                PreparedStatement statement = connection.prepareStatement(SELECT_ALL_PLAYLISTS);
-                ResultSet resultSet = statement.executeQuery()
+        try (Connection connection = DatabaseManager.getConnection();
+              PreparedStatement statement = connection.prepareStatement(SELECT_ALL_PLAYLISTS);
+              ResultSet resultSet = statement.executeQuery()
         ) {
             while (resultSet.next()) {
                 int id = resultSet.getInt("id");
@@ -85,7 +82,6 @@ public class PlaylistDAO implements PlaylistDAOInterface {
         } catch (SQLException e) {
             throw new RuntimeException("Errore durante il recupero delle playlist dal database", e);
         }
-
         return listaPlaylist;
     }
         
@@ -132,15 +128,10 @@ public class PlaylistDAO implements PlaylistDAOInterface {
             if (position != null) {
                 pstmt.setInt(3, position);
             }
-
             return pstmt.executeUpdate() == 1;
-
         } catch (SQLException e) {
-            // Centralizzazione della gestione dell'errore (valida ora per entrambi i flussi)
             if ("23505".equals(e.getSQLState())) {
-                throw new TrackAlreadyInPlaylistException(
-                    "La traccia con ID " + trackId + " è già presente nella playlist con ID " + playlistId
-                );
+                throw new TrackAlreadyInPlaylistException("La traccia con ID " + trackId + " è già presente nella playlist con ID " + playlistId);
             }
             throw new RuntimeException("Errore SQL durante l'operazione sulla playlist", e);
         }
@@ -160,8 +151,7 @@ public class PlaylistDAO implements PlaylistDAOInterface {
             pstmt.setInt(1, playlistId);
             pstmt.setInt(2, trackId);
 
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows == 1;
+            return pstmt.executeUpdate() == 1;
 
         } catch (SQLException e) {
             throw new RuntimeException("Errore SQL durante la rimozione della traccia dalla playlist", e);
@@ -199,7 +189,6 @@ public class PlaylistDAO implements PlaylistDAOInterface {
                     tracks.add(track);
                 }
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("Errore SQL durante l'estrazione delle tracce per la playlist " + playlistId, e);
         }
@@ -209,20 +198,10 @@ public class PlaylistDAO implements PlaylistDAOInterface {
     
     @Override
     public void updatePlaylistTrackOrder(int playlistId, List<Track> tracks) {
-    String sql = "UPDATE playlist_tracks SET posizione = ? WHERE playlist_id = ? AND track_id = ?";
-    try (Connection conn = DatabaseManager.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-        for (int i = 0; i < tracks.size(); i++) {
-            stmt.setInt(1, i);                       // Nuovo indice (0, 1, 2...)
-            stmt.setInt(2, playlistId);              // ID della playlist
-            stmt.setInt(3, tracks.get(i).getId());   // ID della traccia
-            stmt.executeUpdate();
-        }
-
-    } catch (SQLException e) {
-        throw new RuntimeException("Errore SQL durante l'aggiornamento dell'ordine della playlist", e);
+        List<Integer> ids = tracks.stream().map(Track::getId).collect(Collectors.toList());
+        updateTrackPositions(playlistId, ids);
     }
-}
+    
     /**
      * T - 20/01: Aggiorna l'ordine sequenziale dei brani in una playlist.
      * Utilizza un PreparedStatement in batch e gestisce la transazione (Commit/Rollback).

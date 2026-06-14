@@ -22,4 +22,5 @@ public interface TrackDAOInterface {
     List<Integer> getMostFrequentDecades(int limit);
     List<Track> getRandomTracksByGenre(String genre, int limit);
     List<Track> getRandomTracksByDecade(int decade, int limit);
+    void incrementPlayCount(int trackId);
 }
