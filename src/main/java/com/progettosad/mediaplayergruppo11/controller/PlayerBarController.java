@@ -8,6 +8,7 @@ import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.strategy.*;
 import com.progettosad.mediaplayergruppo11.observer.*;
+import com.progettosad.mediaplayergruppo11.view.dialogs.ImageHelper;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -34,9 +35,9 @@ public class PlayerBarController implements Initializable, Observer {
     @FXML private Label currentTrackDuration;
     @FXML private ProgressBar playerProgressBar;
     @FXML private Button playerButton;
-    @FXML private Button skipButton;
     @FXML private ToggleButton btnShuffle;
     @FXML private ToggleButton btnLoop;
+    @FXML private javafx.scene.layout.StackPane currentTrackImage;
 
     private PlaybackEngine engine;
     private MainShellController mainShell;
@@ -157,11 +158,19 @@ public class PlayerBarController implements Initializable, Observer {
             if (currentTrackTitle != null) currentTrackTitle.setText(track.getTitle());
             if (currentTrackArtist != null) currentTrackArtist.setText(track.getArtist());
             if (currentTrackDuration != null) currentTrackDuration.setText(track.getFormattedLength());
+            if (currentTrackImage != null) {
+                currentTrackImage.getChildren().clear(); 
+                currentTrackImage.getChildren().add(ImageHelper.createImageContainer(track.getImage(), 60, 6));
+            }
         } else {
             if (currentTrackTitle != null) currentTrackTitle.setText("");
             if (currentTrackArtist != null) currentTrackArtist.setText("");
             if (currentTrackDuration != null) currentTrackDuration.setText("00:00");
             if (currentTrackTime != null) currentTrackTime.setText("00:00");
+            if (currentTrackImage != null) {
+                currentTrackImage.getChildren().clear(); 
+                currentTrackImage.getChildren().add(ImageHelper.createImageContainer(null, 60, 6));
+            }
         }
     }
     

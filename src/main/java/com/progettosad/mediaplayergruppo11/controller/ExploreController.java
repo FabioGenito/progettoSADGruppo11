@@ -13,6 +13,7 @@ import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
+import com.progettosad.mediaplayergruppo11.view.dialogs.ImageHelper;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -23,8 +24,11 @@ import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -109,11 +113,7 @@ public class ExploreController implements Initializable {
         card.setMinSize(200, 280);
         card.setStyle("-fx-background-color: #181818; -fx-background-radius: 8; -fx-cursor: default; -fx-padding: 15;");
 
-        Region coverImage = new Region();
-        coverImage.setPrefSize(160, 160);
-        coverImage.setMinSize(160, 160);
-        coverImage.setMaxSize(160, 160);
-        coverImage.setStyle("-fx-background-color: #333333; -fx-background-radius: 6;");
+        StackPane imageContainer = ImageHelper.createImageContainer(null, 150, 16);
 
         Label titleLabel = new Label(tempPlaylist.getName());
         titleLabel.setTextFill(Color.WHITE);
@@ -142,7 +142,7 @@ public class ExploreController implements Initializable {
 
         buttonBox.getChildren().addAll(btnPlay, btnSave);
 
-        card.getChildren().addAll(coverImage, titleLabel, infoLabel, buttonBox);
+        card.getChildren().addAll(imageContainer, titleLabel, infoLabel, buttonBox);
         
         card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #282828; -fx-background-radius: 8; -fx-cursor: default; -fx-padding: 15;"));
         card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #181818; -fx-background-radius: 8; -fx-cursor: default; -fx-padding: 15;"));

@@ -8,12 +8,12 @@ import javafx.scene.control.Alert;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
-import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
 import com.progettosad.mediaplayergruppo11.dao.factory.DatabaseDAOFactory;
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.service.UserHistoryService;
+import com.progettosad.mediaplayergruppo11.view.dialogs.ImageHelper;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -28,8 +28,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -46,6 +49,7 @@ public class MainShellController implements Initializable {
 
     public static final int CURRENT_USER_ID=1;
     private Node libraryCenterNode;
+    String DEAFULT_URL = "https://i.etsystatic.com/27344031/r/il/bee9a1/3611801799/il_570xN.3611801799_pnpj.jpg";
     @FXML private BorderPane mainBorderPane;
     @FXML private SidebarController sidebarController;
     @FXML private TrackTableController trackTableController;
@@ -201,18 +205,14 @@ public class MainShellController implements Initializable {
         card.setMinSize(180, 220);
         card.setStyle("-fx-background-color: #181818; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 15;");
 
-        // Finta immagine di copertina
-        Region coverImage = new Region();
-        coverImage.setPrefSize(150, 150);
-        coverImage.setMinSize(150, 150);
-        coverImage.setStyle("-fx-background-color: #333333; -fx-background-radius: 6;");
+        StackPane imageContainer = ImageHelper.createImageContainer(null, 150, 16);
         
         Label titleLabel = new Label(mix.getName());
         titleLabel.setTextFill(Color.WHITE);
         titleLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
         titleLabel.setWrapText(true);
 
-        card.getChildren().addAll(coverImage, titleLabel);
+        card.getChildren().addAll(imageContainer, titleLabel);
 
         card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #282828; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 15;"));
         card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #181818; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 15;"));
@@ -236,10 +236,7 @@ public class MainShellController implements Initializable {
         applyCardStyle(card, false);
  
         // Copertina (placeholder colorato, in attesa di immagini reali)
-        Region cover = new Region();
-        cover.setPrefSize(130, 130);
-        cover.setMinSize(130, 130);
-        cover.setStyle("-fx-background-color: #333333; -fx-background-radius: 6;");
+        StackPane imageContainer = ImageHelper.createImageContainer(track.getImage(), 150, 16);
  
         Label titleLabel = new Label(track.getTitle());
         titleLabel.setTextFill(Color.WHITE);
@@ -252,13 +249,13 @@ public class MainShellController implements Initializable {
         artistLabel.setFont(Font.font("System", 11));
         artistLabel.setMaxWidth(140);
  
-        card.getChildren().addAll(cover, titleLabel, artistLabel);
+        card.getChildren().addAll(imageContainer, titleLabel, artistLabel);
  
         // Hover effect
         card.setOnMouseEntered(e -> applyCardStyle(card, true));
         card.setOnMouseExited(e -> applyCardStyle(card, false));
  
-        // ── Click: invia il brano al PlaybackEngine ──────────────────────────────
+        // Click: invia il brano al PlaybackEngine 
         card.setOnMouseClicked(e ->
             PlaybackEngine.getInstance()
                           .playSelection(track, Collections.singletonList(track))
@@ -279,17 +276,16 @@ public class MainShellController implements Initializable {
         tooltip.setStyle("-fx-background-color: #282828; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 5px;");
         tooltip.setShowDelay(javafx.util.Duration.millis(200)); 
         Tooltip.install(card, tooltip);
-        Region coverImage= new Region();
-        coverImage.setPrefSize(150, 150);
-        coverImage.setMinSize(150, 150);
-        coverImage.setStyle("-fx-background-color: #333333; ...");
+        
+        StackPane imageContainer = ImageHelper.createImageContainer(playlist.getImage(), 150, 16);
+        
         Label nameLabel = new Label(playlist.getName());
         nameLabel.setTextFill(Color.WHITE);
         nameLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
         nameLabel.setMaxWidth(140);
         nameLabel.setWrapText(true);
  
-        card.getChildren().addAll(coverImage, nameLabel);
+        card.getChildren().addAll(imageContainer, nameLabel);
  
         card.setOnMouseEntered(e -> applyCardStyle(card, true));
         card.setOnMouseExited(e -> applyCardStyle(card, false));
@@ -428,27 +424,64 @@ public class MainShellController implements Initializable {
     
     //T-16/01:Estrazione Playlist frequenti
     private void showTopPlaylists(List<Playlist> playlists) {
-    HBox row = new HBox(15);
-    row.setAlignment(Pos.CENTER_LEFT);
+        HBox row = new HBox(15);
+        row.setAlignment(Pos.CENTER_LEFT);
 
-    for (Playlist p : playlists) {
-        VBox card = createMixCard(p);
-        card.setOnMouseClicked(e -> onPlaylistSelected(p));
-        row.getChildren().add(card);
+        for (Playlist p : playlists) {
+            VBox card = createMixCard(p);
+            card.setOnMouseClicked(e -> onPlaylistSelected(p));
+            row.getChildren().add(card);
+        }
+
+        ScrollPane scroll = new ScrollPane(row);
+        scroll.setFitToHeight(true);
+        scroll.setStyle("-fx-background-color: #121212; -fx-control-inner-background: #121212; -fx-vbar-policy: NEVER;");
+
+        Label titolo = new Label("Le tue playlist piu' ascoltate");
+        titolo.setTextFill(Color.WHITE);
+        titolo.setFont(Font.font("System", FontWeight.BOLD, 22));
+
+        VBox container = new VBox(15);
+        container.setStyle("-fx-background-color: #121212; -fx-padding: 20;");
+        container.getChildren().addAll(titolo, scroll);
+
+        mainBorderPane.setCenter(container);
     }
-
-    ScrollPane scroll = new ScrollPane(row);
-    scroll.setFitToHeight(true);
-    scroll.setStyle("-fx-background-color: #121212; -fx-control-inner-background: #121212; -fx-vbar-policy: NEVER;");
-
-    Label titolo = new Label("Le tue playlist piu' ascoltate");
-    titolo.setTextFill(Color.WHITE);
-    titolo.setFont(Font.font("System", FontWeight.BOLD, 22));
-
-    VBox container = new VBox(15);
-    container.setStyle("-fx-background-color: #121212; -fx-padding: 20;");
-    container.getChildren().addAll(titolo, scroll);
-
-    mainBorderPane.setCenter(container);
+    
+    /**
+     * Metodo Helper per generare le immagini di copertina asincrone
+     * con bordi arrotondati e sfondo segnaposto grigio.
+     * * @param imageUrl L'URL dell'immagine.
+     * @param size La dimensione (larghezza e altezza) del quadrato.
+     * @param radius L'arrotondamento degli angoli.
+     * @return Lo StackPane pronto per essere inserito nella UI.
+     */
+    private StackPane createImageContainer(String imageUrl, double size, double radius) {
+        StackPane imageContainer = new StackPane();
+        imageContainer.setPrefSize(size, size);
+        imageContainer.setMinSize(size, size);
+        imageContainer.setStyle("-fx-background-color: #333333; -fx-background-radius: " + radius + ";");
+        
+        ImageView coverImageView = new ImageView();
+        coverImageView.setFitWidth(size);
+        coverImageView.setFitHeight(size);
+        
+        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(size, size);
+        clip.setArcWidth(radius);
+        clip.setArcHeight(radius);
+        coverImageView.setClip(clip);
+        
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            try {
+                Image img = new Image(imageUrl, true);
+                coverImageView.setImage(img);
+            } catch (Exception e) {
+                System.out.println("Impossibile caricare immagine URL: " + imageUrl);
+            }
+        }
+        
+        imageContainer.getChildren().add(coverImageView);
+        return imageContainer;
     }
 }
+
