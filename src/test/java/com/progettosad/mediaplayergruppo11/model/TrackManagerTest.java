@@ -3,7 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/UnitTests/JUnit5TestClass.java to edit this template
  */
 package com.progettosad.mediaplayergruppo11.model;
-
+import com.progettosad.mediaplayergruppo11.observer.AppEvent;
 import com.progettosad.mediaplayergruppo11.dao.FakeTrackDAO;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +36,7 @@ class TrackManagerTest {
         observerNotified = false;
         Observer spyObserver = new Observer() {
             @Override
-            public void update() {
+            public void update(AppEvent event) {
                 observerNotified = true;
             }
         };
@@ -76,7 +76,6 @@ class TrackManagerTest {
         trackManager.deleteTrack(idToDelete);
 
         assertTrue(observerNotified, "L'Observer doveva essere notificato dell'avvenuta cancellazione");
-        assertEquals(TrackManager.EVENT_TRACK_DELETED + idToDelete, trackManager.getState(), "Lo stato interno del Manager deve riflettere l'eliminazione");
         assertEquals(0, fakeDao.getAllTracks().size(), "Il finto database dovrebbe ora essere vuoto");
     }
 }

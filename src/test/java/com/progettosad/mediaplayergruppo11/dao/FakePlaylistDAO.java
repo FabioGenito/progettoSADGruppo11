@@ -101,4 +101,13 @@ public class FakePlaylistDAO implements PlaylistDAOInterface {
         }
         return false;
     }
+    
+    @Override
+public List<Playlist> getMostPlayedPlaylistsByUser(int userId, int limit) {
+    return new ArrayList<>(); // Ritorna lista vuota per i test
+}
+
+    @Override
+    public boolean addTrackToPlaylist(int playlistId, int trackId, int originalIndex) {        return addTrackToPlaylist(playlistId, trackId);
+    }
 }

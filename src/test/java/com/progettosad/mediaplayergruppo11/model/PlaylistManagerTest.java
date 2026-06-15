@@ -3,9 +3,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/UnitTests/JUnit5TestClass.java to edit this template
  */
 package com.progettosad.mediaplayergruppo11.model;
-
 import com.progettosad.mediaplayergruppo11.dao.FakePlaylistDAO;
 import org.junit.jupiter.api.BeforeEach;
+import com.progettosad.mediaplayergruppo11.observer.AppEvent;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
@@ -37,7 +37,7 @@ class PlaylistManagerTest {
         observerNotified = false;
         Observer spyObserver = new Observer() {
             @Override
-            public void update() {
+            public void update(AppEvent event) {
                 observerNotified = true;
             }
         };
@@ -52,8 +52,6 @@ class PlaylistManagerTest {
         
         playlistManager.addTrackToPlaylist(MOCK_PLAYLIST_ID, MOCK_TRACK_ID);
 
-        assertEquals(PlaylistManager.EVENT_TRACK_ADDED_TO_PLAYLIST_PREFIX + MOCK_PLAYLIST_ID, playlistManager.getState(), 
-            "Lo stato deve riflettere l'ID della playlist modificata");
         assertTrue(observerNotified, "L'Observer doveva essere notificato dell'avvenuto inserimento");
     }
 

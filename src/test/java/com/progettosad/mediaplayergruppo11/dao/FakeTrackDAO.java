@@ -108,4 +108,13 @@ public class FakeTrackDAO implements TrackDAOInterface {
     public List<Track> getRandomTracksByDecade(int decade, int limit) {
         return Arrays.asList(new Track("Traccia Anni " + decade, "B", 200, "Al", decade, "Pop", ""));
     }
+    
+    @Override
+    public void incrementPlayCount(int trackId) {
+}
+
+    @Override
+    public List<Track> getMostPlayedTracksByUser(int userId, int limit) {
+        return new ArrayList<>(); // Ritorna una lista vuota per i test
+    }
 }

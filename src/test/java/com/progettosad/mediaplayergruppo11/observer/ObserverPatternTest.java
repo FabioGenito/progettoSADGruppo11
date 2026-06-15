@@ -1,4 +1,5 @@
 package com.progettosad.mediaplayergruppo11.observer;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,9 +37,10 @@ class ObserverPatternTest {
         }
 
         @Override
-        public void notifyObservers() {
+        public void notifyObservers(AppEvent event) {
             for (Observer o : observers) {
-                o.update();
+                //Passiamo l'evento al metodo update
+                o.update(event);
             }
         }
         
@@ -57,7 +59,7 @@ class ObserverPatternTest {
         public int notificationCount = 0;
 
         @Override
-        public void update() {
+        public void update(AppEvent event) {
             hasBeenNotified = true;
             notificationCount++;
         }
@@ -92,7 +94,8 @@ class ObserverPatternTest {
         subject.attach(spia1);
         subject.attach(spia2);
 
-        subject.notifyObservers();
+        //Passiamo null all'evento
+        subject.notifyObservers(null);
 
         assertTrue(spia1.hasBeenNotified, "L'Observer 1 doveva ricevere la notifica.");
         assertTrue(spia2.hasBeenNotified, "L'Observer 2 doveva ricevere la notifica.");
@@ -108,7 +111,9 @@ class ObserverPatternTest {
         
         //Rimuoviamo l'Observer e poi lanciamo la notifica
         subject.detach(spia);
-        subject.notifyObservers();
+        
+        //Passiamo null all'evento
+        subject.notifyObservers(null);
 
         assertEquals(0, subject.getObserverCount(), "La lista degli iscritti deve essere vuota.");
         assertFalse(spia.hasBeenNotified, "L'Observer rimosso NON doveva ricevere la notifica.");
@@ -124,7 +129,7 @@ class ObserverPatternTest {
         subject.attach(spia);
         subject.attach(spia);
         
-        subject.notifyObservers();
+        subject.notifyObservers(null);
 
         assertEquals(1, subject.getObserverCount(), "Il Subject non deve ammettere duplicati.");
         assertEquals(1, spia.notificationCount, "La spia deve ricevere 1 sola notifica, anche se iscritta 2 volte.");

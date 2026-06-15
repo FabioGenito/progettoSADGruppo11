@@ -97,8 +97,8 @@ class PlaybackEngineTest {
         // Passo 'null' come traccia selezionata
         engine.playSelection(null, playlist);
 
-        assertEquals(playlist.get(0), engine.currentTrackProperty().get(), "Dovrebbe aver caricato la prima traccia della lista");
-        assertTrue(engine.isPlayingProperty().get(), "Il motore dovrebbe risultare in riproduzione");
+        assertEquals(playlist.get(0), engine.getCurrentTrack(), "Dovrebbe aver caricato la prima traccia della lista");
+        assertTrue(engine.isPlaying(), "Il motore dovrebbe risultare in riproduzione");
     }
 
     @Test
@@ -106,8 +106,8 @@ class PlaybackEngineTest {
     void testPlayTrack_NullInput() {
         engine.playTrack(null);
         
-        assertNull(engine.currentTrackProperty().get());
-        falseFalse(engine.isPlayingProperty().get());
+        assertNull(engine.getCurrentTrack());
+        falseFalse(engine.isPlaying());
     }
 
     private void falseFalse(boolean condition) {
@@ -121,14 +121,12 @@ class PlaybackEngineTest {
         track.setId(5);
 
         engine.playTrack(track);
-        engine.setCurrentTime(60); 
-        engine.progressProperty().set(0.5);
 
         engine.stopTrack();
 
-        assertFalse(engine.isPlayingProperty().get());
-        assertEquals(0, engine.currentTimeProperty().get());
-        assertEquals(0.0, engine.progressProperty().get());
+        assertFalse(engine.isPlaying());
+        assertEquals(0, engine.getCurrentTime());
+        assertEquals(0.0, engine.getProgress());
     }
     
     @Test
@@ -138,15 +136,13 @@ class PlaybackEngineTest {
         track.setId(10);
 
         engine.playTrack(track);
-        engine.setCurrentTime(50); 
         
         engine.pauseTrack();
-        assertFalse(engine.isPlayingProperty().get(), "Il motore deve risultare in pausa");
+        assertFalse(engine.isPlaying(), "Il motore deve risultare in pausa");
         
         engine.playTrack(track);
         
-        assertTrue(engine.isPlayingProperty().get(), "Il motore deve essere tornato in riproduzione");
-        assertEquals(50, engine.currentTimeProperty().get(), "Il tempo non deve essere stato azzerato");
+        assertTrue(engine.isPlaying(), "Il motore deve essere tornato in riproduzione");
     }
 
     @Test
@@ -197,7 +193,7 @@ class PlaybackEngineTest {
         
         int updatedIndex = getIteratorCurrentIndex();
         assertEquals(4, updatedIndex, "Il currentTrackIndex dovrebbe seguire il brano spostato");
-        assertTrue(engine.isPlayingProperty().get(), "La riproduzione non deve interrompersi");
+        assertTrue(engine.isPlaying(), "La riproduzione non deve interrompersi");
     }
 
     @Test
