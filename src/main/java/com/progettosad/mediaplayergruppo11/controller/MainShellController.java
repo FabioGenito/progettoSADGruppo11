@@ -26,6 +26,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -172,7 +173,7 @@ public class MainShellController implements Initializable {
             // Una card per ciascuna playlist più ascoltata
             if (!result.playlists.isEmpty()) {
                 VBox card = createMixCard(new Playlist(-1, "Le tue playlist più ascoltate", null));
-                card.setOnMouseClicked(e -> onPlaylistSelected(result.playlists.get(0)));
+                card.setOnMouseClicked(e -> showTopPlaylists(result.playlists));
                 consigliatiContainer.getChildren().add(card);
             }
             });
@@ -423,5 +424,31 @@ public class MainShellController implements Initializable {
         if (trackTableController != null) {
             trackTableController.loadPlaylistTracks(selectedPlaylist);
         }
+    }
+    
+    //T-16/01:Estrazione Playlist frequenti
+    private void showTopPlaylists(List<Playlist> playlists) {
+    HBox row = new HBox(15);
+    row.setAlignment(Pos.CENTER_LEFT);
+
+    for (Playlist p : playlists) {
+        VBox card = createMixCard(p);
+        card.setOnMouseClicked(e -> onPlaylistSelected(p));
+        row.getChildren().add(card);
+    }
+
+    ScrollPane scroll = new ScrollPane(row);
+    scroll.setFitToHeight(true);
+    scroll.setStyle("-fx-background-color: #121212; -fx-control-inner-background: #121212; -fx-vbar-policy: NEVER;");
+
+    Label titolo = new Label("Le tue playlist piu' ascoltate");
+    titolo.setTextFill(Color.WHITE);
+    titolo.setFont(Font.font("System", FontWeight.BOLD, 22));
+
+    VBox container = new VBox(15);
+    container.setStyle("-fx-background-color: #121212; -fx-padding: 20;");
+    container.getChildren().addAll(titolo, scroll);
+
+    mainBorderPane.setCenter(container);
     }
 }
