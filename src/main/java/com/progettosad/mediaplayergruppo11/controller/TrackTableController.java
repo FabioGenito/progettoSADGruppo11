@@ -47,6 +47,8 @@ public class TrackTableController implements Initializable, Observer {
     @FXML private TableColumn<Track, String> colArtista;
     @FXML private TableColumn<Track, String> colAlbum;
     @FXML private TableColumn<Track, String> colDurata;
+    @FXML private TableColumn<Track, String> colGenere;
+    @FXML private TableColumn<Track, Integer> colAnno;
 
     private Playlist currentOpenPlaylist = null; // Memorizza la playlist aperta, se c'è
     private TrackManager subject;
@@ -64,6 +66,8 @@ public class TrackTableController implements Initializable, Observer {
         colArtista.setCellValueFactory(new PropertyValueFactory<>("artist"));
         colAlbum.setCellValueFactory(new PropertyValueFactory<>("album"));
         colDurata.setCellValueFactory(new PropertyValueFactory<>("formattedLength"));
+        colGenere.setCellValueFactory(new PropertyValueFactory<>("genre"));
+        colAnno.setCellValueFactory(new PropertyValueFactory<>("publicationYear"));
         colDurata.setStyle("-fx-alignment: CENTER_RIGHT");
         trackTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         // Colonna Indice personalizzata
@@ -210,6 +214,15 @@ public class TrackTableController implements Initializable, Observer {
     private void setupTableRows() {
         trackTableView.setRowFactory(tv -> {
             TableRow<Track> row = new TableRow<>();
+            
+            row.setOnMouseEntered(event -> {
+                if (!row.isEmpty()) {
+                    row.setCursor(javafx.scene.Cursor.HAND);
+                }
+            });
+            row.setOnMouseExited(event -> {
+                row.setCursor(javafx.scene.Cursor.DEFAULT);
+            });
 
             // --- 1. GESTIONE DOPPIO CLICK ---
             row.setOnMouseClicked(event -> {

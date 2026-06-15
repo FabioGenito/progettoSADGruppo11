@@ -26,6 +26,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -273,6 +274,10 @@ public class MainShellController implements Initializable {
        VBox card = new VBox(12);
         card.setPrefSize(180, 220);
         card.setMinSize(180, 220);
+        Tooltip tooltip = new Tooltip(playlist.getName());
+        tooltip.setStyle("-fx-background-color: #282828; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 5px;");
+        tooltip.setShowDelay(javafx.util.Duration.millis(200)); 
+        Tooltip.install(card, tooltip);
         Region coverImage= new Region();
         coverImage.setPrefSize(150, 150);
         coverImage.setMinSize(150, 150);
