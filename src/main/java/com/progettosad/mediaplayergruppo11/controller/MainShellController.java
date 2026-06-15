@@ -386,6 +386,10 @@ public class MainShellController implements Initializable {
         if (trackTableController != null) {
             trackTableController.loadAllTracks();
         }
+        
+        if (sidebarController != null) {
+            sidebarController.clearSelection();
+        }
     }
 
     /**
@@ -400,6 +404,9 @@ public class MainShellController implements Initializable {
         } catch (Exception e) {
             e.printStackTrace();
             AlertUtils.show(Alert.AlertType.ERROR, "Errore", "Impossibile caricare la vista Scopri.");
+        }
+        if (sidebarController != null) {
+            sidebarController.clearSelection();
         }
     }
 

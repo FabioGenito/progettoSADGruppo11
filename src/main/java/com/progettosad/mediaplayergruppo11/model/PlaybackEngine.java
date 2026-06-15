@@ -31,14 +31,14 @@ public class PlaybackEngine implements Subject {
     private ConcretePlaylistIterator playlistIterator;
     private PlayerState currentState;
     private Track currentTrack;
-    private int totalTime = 0;
     private PlaybackStrategy currentStrategy = new SequentialStrategy();
 
     private final List<Observer> observers = new ArrayList<>();
 
-    private int currentTime = 0;
-    private boolean isPlaying = false;
-    private double progress = 0.0;
+    private volatile int totalTime = 0;
+    private volatile int currentTime = 0;
+    private volatile boolean isPlaying = false;
+    private volatile double progress = 0.0;
     
     private ScheduledExecutorService timer;
        
@@ -90,32 +90,30 @@ public class PlaybackEngine implements Subject {
         if (track==null) return;
         
         //verifica se si richiede di riprendere il prano precedentemente messo in pausa
-        if (currentTrack != null && currentTrack.getId() == track.getId()) {
-            if (currentTime < totalTime - 1) {
-                currentState.play(this);
-                this.isPlaying = true;
-                startTimer(); 
-                notifyObservers(new AppEvent(AppEventType.PLAYBACK_STATE_CHANGED, currentTrack));
-                return;
-            }
+        if (currentTrack != null && currentTrack.getId() == track.getId() && currentTime > 0 && currentTime < totalTime - 1) {
+            currentState.play(this);
+            this.isPlaying = true;
+            startTimer(); 
+            notifyObservers(new AppEvent(AppEventType.PLAYBACK_STATE_CHANGED, currentTrack));
+            return;
         }
         
-        //se si cambia il brano l'esecuzione precedente viene interrotta
-        if(currentTrack != null){
-            stopTrack();
+        stopTimer();
+        if (currentState != null) {
+            currentState.stop(this);
         }
         
         this.currentTrack = track;
         this.totalTime = track.getLength();
         this.currentTime = 0;
         this.progress = 0.0;
-        
-        startTimer(); 
-        currentState.play(this);
         this.isPlaying = true;
+
+        currentState.play(this);
+        startTimer(); 
         
         notifyObservers(new AppEvent(AppEventType.PLAYBACK_STATE_CHANGED, track));
-            
+
         //T-08/02
         CompletableFuture.runAsync(() -> {
             try {
@@ -205,6 +203,7 @@ public class PlaybackEngine implements Subject {
             //T-08/02: il riutilizzo di playTrack garantisce che la logica asincrona
             //del DB venga ereditata automaticamente
             //T - 08/01: Backend – Logica Next e Coda di Riproduzione)
+            this.currentTime = 0;
             playTrack(nextTrack);
         }else{
             //Nessun brano successivo: stoppa la ripdouzione
@@ -222,6 +221,10 @@ public class PlaybackEngine implements Subject {
     
     public double getProgress() {
         return progress; 
+    }
+    
+    public int getCurrentTime() { 
+        return currentTime; 
     }
     
     public Track getCurrentTrack() { 

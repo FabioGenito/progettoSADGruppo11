@@ -101,6 +101,16 @@ public class SidebarController implements Initializable, Observer {
         });
     }
     
+    /**
+     * Rimuove la selezione visiva dalla lista delle playlist.
+     * Utile per permettere di riselezionare la stessa playlist dopo aver navigato altrove.
+     */
+    public void clearSelection() {
+        if (playlistListView != null) {
+            playlistListView.getSelectionModel().clearSelection();
+        }
+    }
+    
     @Override
     public void update(AppEvent event) {
         

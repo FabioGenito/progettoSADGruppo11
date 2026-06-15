@@ -88,10 +88,11 @@ public class PlayerBarController implements Initializable, Observer {
                         playerButton.setText(engine.isPlaying() ? "||" : "▶");
                     }
                     
-                    // Se la riproduzione è stata stoppata completamente (es. fine libreria)
-                    if (playerProgressBar != null && !engine.isPlaying() && track == null) {
-                        playerProgressBar.setProgress(0.0);
-                        if (currentTrackTime != null) currentTrackTime.setText("00:00");
+                    if (playerProgressBar != null) {
+                        playerProgressBar.setProgress(engine.getProgress());
+                    }
+                    if (currentTrackTime != null) {
+                        currentTrackTime.setText(formatTime(engine.getCurrentTime()));
                     }
                     break;
                     
