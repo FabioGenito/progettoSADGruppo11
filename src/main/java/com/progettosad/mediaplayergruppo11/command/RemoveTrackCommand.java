@@ -6,6 +6,7 @@ package com.progettosad.mediaplayergruppo11.command;
 
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
+import com.progettosad.mediaplayergruppo11.observer.*;
 
 /**
  *
@@ -30,7 +31,7 @@ public class RemoveTrackCommand implements Command{
          try {
             playlistDAO.removeTrackFromPlaylist(playlistId,trackId);
             System.out.println("Command: Traccia " + trackId + " rimossa dalla playlist " + playlistId);
-            TrackManager.getInstance().setState("REMOVED_FROM_PLAYLIST_" + playlistId);
+            TrackManager.getInstance().notifyObservers(new AppEvent(AppEventType.TRACK_REMOVED_FROM_PLAYLIST, playlistId));
         } catch (Exception e) {
             System.err.println("Errore durante la rimozione della traccia.");
             e.printStackTrace();
@@ -42,7 +43,7 @@ public class RemoveTrackCommand implements Command{
          try {
         playlistDAO.addTrackToPlaylist(playlistId, trackId, originalIndex);
         System.out.println("Command Undo: Traccia " + trackId + " reinserita nella posizione " + originalIndex);
-        TrackManager.getInstance().setState("TRACK_RESTORED_PLAYLIST_" + playlistId);
+        TrackManager.getInstance().notifyObservers(new AppEvent(AppEventType.TRACK_ADDED_TO_PLAYLIST, playlistId));
         // Observer Pattern
         } catch (Exception e) {
             System.err.println("Errore durante il ripristino.");

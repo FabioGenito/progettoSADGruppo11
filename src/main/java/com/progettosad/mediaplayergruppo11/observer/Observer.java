@@ -9,5 +9,5 @@ package com.progettosad.mediaplayergruppo11.observer;
  * @author gcucc
  */
 public interface Observer {
-    void update();
+    void update(AppEvent event);
 }

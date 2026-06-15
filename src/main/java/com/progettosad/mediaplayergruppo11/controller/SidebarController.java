@@ -2,6 +2,7 @@ package com.progettosad.mediaplayergruppo11.controller;
 
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
+import com.progettosad.mediaplayergruppo11.observer.AppEvent;
 import com.progettosad.mediaplayergruppo11.observer.Observer;
 import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
 import com.progettosad.mediaplayergruppo11.view.dialogs.PlaylistDialog;
@@ -101,17 +102,20 @@ public class SidebarController implements Initializable, Observer {
     }
     
     @Override
-    public void update() {
-        String stato = PlaylistManager.getInstance().getState();
+    public void update(AppEvent event) {
         
-        if (PlaylistManager.EVENT_PLAYLIST_CREATED.equals(stato)) {
-            Playlist nuovaPlaylist = PlaylistManager.getInstance().getLastCreatedPlaylist();
-            
             Platform.runLater(() -> {
-                if (playlistListView != null && nuovaPlaylist != null) {
-                    playlistListView.getItems().add(nuovaPlaylist);
+                switch (event.getType()) {
+                    case PLAYLIST_CREATED:
+                        Playlist nuovaPlaylist = PlaylistManager.getInstance().getLastCreatedPlaylist();
+                        if (playlistListView != null && nuovaPlaylist != null) {
+                            playlistListView.getItems().add(nuovaPlaylist);
+                        }
+                        break;
+                    default:
+                        break;
+                        
                 }
             });
         }
-    }
 }

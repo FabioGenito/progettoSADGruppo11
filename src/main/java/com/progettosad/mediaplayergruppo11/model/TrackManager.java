@@ -3,11 +3,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.progettosad.mediaplayergruppo11.model;
-import com.progettosad.mediaplayergruppo11.model.Track;
-import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAOInterface;
-import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.observer.Subject;
+import com.progettosad.mediaplayergruppo11.dao.factory.*;
+import com.progettosad.mediaplayergruppo11.observer.*;
 import java.util.ArrayList;
 import java.util.List;
 /**
@@ -16,15 +14,10 @@ import java.util.List;
  */
 public class TrackManager implements Subject{
     
-    public static final String EVENT_TRACK_ADDED = "ADDED_TRACK";
-    public static final String EVENT_TRACK_DELETED = "DELETED_TRACK";
-    public static final String EVENT_TRACK_UPDATED = "UPDATED_TRACK";
-    
     private static TrackManager instance;
-    private String state;
     private Track lastProcessedTrack;
     private TrackDAOInterface dao; 
-    private List<Observer> observers = new ArrayList<>();
+    private final List<Observer> observers = new ArrayList<>();
     
     // Singleton pattern
     public static synchronized TrackManager getInstance() {
@@ -35,7 +28,8 @@ public class TrackManager implements Subject{
     }
 
     private TrackManager() {
-        this.dao = new TrackDAO();
+        DAOFactory factory = DatabaseDAOFactory.getInstance();
+        this.dao = factory.getTrackDAO();   
     }
     
     public void setDao(TrackDAOInterface dao) {
@@ -48,14 +42,12 @@ public class TrackManager implements Subject{
 
     public void notifyTrackAdded(Track track) {
         this.lastProcessedTrack = track;
-        this.state = EVENT_TRACK_ADDED;
-        notifyObservers();
+        notifyObservers(new AppEvent(AppEventType.TRACK_ADDED_TO_DB, track));
     }
     
     public void notifyTrackUpdated(Track track) {
         this.lastProcessedTrack = track;
-        this.state = EVENT_TRACK_UPDATED;
-        notifyObservers();
+        notifyObservers(new AppEvent(AppEventType.TRACK_UPDATED, track));
     }
     
     public Track getLastProcessedTrack() {
@@ -76,23 +68,17 @@ public class TrackManager implements Subject{
     }
 
     @Override
-    public void notifyObservers() {
+    public void notifyObservers(AppEvent event) {
         for (Observer o : observers) {
-            o.update();
+            o.update(event);
         }
     }
-
-    public String getState() {
-        return state;
-    }
-
 
     public void deleteTrack(int trackId) {
         boolean isDeleted = dao.deleteTrack(trackId);
         if (isDeleted) {
-            this.state = EVENT_TRACK_DELETED + trackId;
             System.out.println("TrackManager: Traccia eliminata dal DB. Emetto notifica agli Observer...");
-            notifyObservers();
+            notifyObservers(new AppEvent(AppEventType.TRACK_DELETED_FROM_DB, trackId));
         } else {
             System.err.println("TrackManager: Impossibile eliminare la traccia (ID non trovato o errore DB).");
         }
@@ -135,13 +121,5 @@ public class TrackManager implements Subject{
             return new ArrayList<>();
         }
     }
-    
-    /**
-     * T-09/03
-     * Aggiorna lo stato del Subject e notifica a tutti gli observer in ascolto
-     */
-    public void setState(String newState){
-        this.state=newState;
-        notifyObservers();
-    }
+
 }

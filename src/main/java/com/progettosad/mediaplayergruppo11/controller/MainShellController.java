@@ -2,21 +2,23 @@ package com.progettosad.mediaplayergruppo11.controller;
 
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.service.RecommendationEngine;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.scene.layout.BorderPane;
+
 import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
 import javafx.scene.control.Alert;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
-import com.progettosad.mediaplayergruppo11.command.UndoManager;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
-import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
+import com.progettosad.mediaplayergruppo11.dao.factory.DatabaseDAOFactory;
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
+import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.service.UserHistoryService;
+
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+import javafx.scene.layout.BorderPane;
 import java.util.Collections;
 import javafx.animation.PauseTransition;
 import javafx.concurrent.Task;
@@ -142,8 +144,8 @@ public class MainShellController implements Initializable {
  
         // Istanziamo il servizio con le implementazioni concrete dei DAO
         UserHistoryService historyService = new UserHistoryService(
-            new TrackDAO(),
-            new PlaylistDAO()
+            DatabaseDAOFactory.getInstance().getTrackDAO(),
+            DatabaseDAOFactory.getInstance().getPlaylistDAO()
         );
  
         Task<UserHistoryResult> historyTask = new Task<>() {
@@ -295,7 +297,7 @@ public class MainShellController implements Initializable {
             Task<List<Track>> playTask = new Task<>() {
                 @Override
                 protected List<Track> call() {
-                    return new PlaylistDAO().getTracksByPlaylist(playlist.getId());
+                    return PlaylistManager.getInstance().getTracksByPlaylist(playlist.getId());
                 }
             };
             playTask.setOnSucceeded(ev -> {

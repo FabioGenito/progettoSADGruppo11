@@ -3,9 +3,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.progettosad.mediaplayergruppo11.command;
+
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
+import com.progettosad.mediaplayergruppo11.observer.*;
 /**
  *
  * @author gcucc
@@ -47,7 +49,7 @@ public class AddTrackCommand implements Command {
             System.out.println("Command Undo: Traccia " + trackId + " rimossa dalla playlist " + playlistId);
             
             // L'OBSERVER: Avvisa l'interfaccia grafica che il brano non c'è più
-            TrackManager.getInstance().setState("REMOVED_FROM_PLAYLIST_" + playlistId);                  
+            TrackManager.getInstance().notifyObservers(new AppEvent(AppEventType.TRACK_REMOVED_FROM_PLAYLIST, playlistId));                  
         } catch (Exception e) {
             System.err.println("Errore durante il ripristino dello stato.");
             e.printStackTrace();

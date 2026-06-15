@@ -14,9 +14,8 @@ import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
  */
 public class PlayingState implements PlayerState{
     @Override
-    //caso in cui la traccia sia già in riproduzione non fa nulla
     public void play(PlaybackEngine context){
-        
+        // Già in riproduzione non fa nulla
     }
     
     //se viene premuto il pulsante pausa il sistema salva il tempo in cui
@@ -24,7 +23,6 @@ public class PlayingState implements PlayerState{
     //sospendendo l'avanzamento
     @Override
     public void pause(PlaybackEngine context){
-        context.getTimeLine().pause();
         context.setCurrentState(new PausedState());
     }
     
@@ -32,8 +30,6 @@ public class PlayingState implements PlayerState{
     //settando la line di nuovo a 0.
     @Override
     public void stop(PlaybackEngine context){
-        context.getTimeLine().stop();
-        context.setCurrentTime(0);
         context.setCurrentState(new StoppedState());
     }
     

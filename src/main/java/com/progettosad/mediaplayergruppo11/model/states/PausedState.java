@@ -13,19 +13,16 @@ import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 public class PausedState implements PlayerState{
     @Override
     public void play(PlaybackEngine context){
-        context.getTimeLine().play();
         context.setCurrentState(new PlayingState());
     }
     
     @Override
     public void pause(PlaybackEngine context){
-        
+        // Già in pausa, non fa nulla
     }
     
     @Override
     public void stop(PlaybackEngine context){
-        context.getTimeLine().stop();
-        context.setCurrentTime(0);
         context.setCurrentState(new StoppedState());
     }
 }

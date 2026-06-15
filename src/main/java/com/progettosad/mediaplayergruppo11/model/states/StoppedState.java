@@ -18,18 +18,15 @@ public class StoppedState implements PlayerState{
     @Override
     public void play(PlaybackEngine context){
         context.setCurrentState(new PlayingState());
-        context.getTimeLine().play();
     }
     
     @Override
-    //siccome il lettore se fermo non può essere in pausa non fa nessuna operazione
     public void pause(PlaybackEngine context){
-        
+        //siccome il lettore se fermo non può essere in pausa non fa nessuna operazione
     }
     
     @Override
-    //siccome il lettore è gia fermo non esegue nessuna operazione
     public void stop(PlaybackEngine context){
-        
+        //siccome il lettore è gia fermo non esegue nessuna operazione
     }
 }

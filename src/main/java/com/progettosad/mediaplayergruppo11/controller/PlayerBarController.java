@@ -6,9 +6,8 @@ package com.progettosad.mediaplayergruppo11.controller;
 
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 import com.progettosad.mediaplayergruppo11.model.Track;
-import com.progettosad.mediaplayergruppo11.model.strategy.LoopStrategy;
-import com.progettosad.mediaplayergruppo11.model.strategy.SequentialStrategy;
-import com.progettosad.mediaplayergruppo11.model.strategy.ShuffleStrategy;
+import com.progettosad.mediaplayergruppo11.model.strategy.*;
+import com.progettosad.mediaplayergruppo11.observer.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -27,7 +26,7 @@ import java.util.ResourceBundle;
  * @author Fabio
  */
 
-public class PlayerBarController implements Initializable {
+public class PlayerBarController implements Initializable, Observer {
 
     @FXML private Label currentTrackTitle;
     @FXML private Label currentTrackArtist;
@@ -49,33 +48,57 @@ public class PlayerBarController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         engine = PlaybackEngine.getInstance();
+        
+        engine.attach(this);
         setupStrategies();
 
-        if (playerProgressBar != null) {
-            playerProgressBar.progressProperty().bind(engine.progressProperty());
+        updateTrackInfo(engine.getCurrentTrack());        
+            
+        if (playerButton != null) {
+            playerButton.setText(engine.isPlaying() ? "||" : "▶");
         }
+        if (playerProgressBar != null) {
+            playerProgressBar.setProgress(engine.getProgress());
+        }
+    }
+    
+    @Override
+    public void update(AppEvent event) {
+        if(event == null) return;
+        
+        Platform.runLater(() -> {
+            switch(event.getType()) {
+                case PLAYBACK_TIME_TICK:
+                    // Aggiorna il timer numerico e la barra di avanzamento visiva
+                    int newTime = (Integer) event.getPayload();
+                    if (currentTrackTime != null) {
+                        currentTrackTime.setText(formatTime(newTime));   
+                    }
+                    if (playerProgressBar != null) {
+                        playerProgressBar.setProgress(engine.getProgress());
+                    }
+                    break;
 
-        engine.currentTrackProperty().addListener((observable, oldTrack, newTrack) -> {
-            Platform.runLater(() -> updateTrackInfo(newTrack));
-        });
-
-        updateTrackInfo(engine.currentTrackProperty().get());
-
-        engine.currentTimeProperty().addListener((observable, oldTime, newTime) -> {
-            Platform.runLater(() -> {
-                if (currentTrackTime != null) {
-                    currentTrackTime.setText(formatTime(newTime.intValue()));   
-                }
-            });
-        });
-
-        // 5. Listener per il cambio stato Play/Pausa
-        engine.isPlayingProperty().addListener((observable, oldValue, isPlaying) -> {
-            Platform.runLater(() -> {
-                if (playerButton != null) {
-                    playerButton.setText(isPlaying ? "||" : "▶");
-                }
-            });
+                case PLAYBACK_STATE_CHANGED:
+                    // Aggiorna le etichette del brano e il bottone Play/Pausa
+                    Track track = (Track) event.getPayload();
+                    updateTrackInfo(track);
+                    
+                    if (playerButton != null) {
+                        playerButton.setText(engine.isPlaying() ? "||" : "▶");
+                    }
+                    
+                    // Se la riproduzione è stata stoppata completamente (es. fine libreria)
+                    if (playerProgressBar != null && !engine.isPlaying() && track == null) {
+                        playerProgressBar.setProgress(0.0);
+                        if (currentTrackTime != null) currentTrackTime.setText("00:00");
+                    }
+                    break;
+                    
+                default:
+                    // Eventi non di competenza di questo controller
+                    break; 
+            }
         });
     }
     
@@ -148,11 +171,11 @@ public class PlayerBarController implements Initializable {
      */
     @FXML
     private void handlePlayPause() {
-        if (engine.isPlayingProperty().get()) {
+        if (engine.isPlaying()) {
             engine.pauseTrack();
         } else {
-            if (engine.currentTrackProperty().get() != null) {
-                engine.playTrack(engine.currentTrackProperty().get());
+            if (engine.getCurrentTrack() != null) {
+                engine.playTrack(engine.getCurrentTrack());
             } else {
                 // Se non c'è nessun brano caricato, chiediamo al guscio padre di far partire il primo
                 if (mainShell != null) {

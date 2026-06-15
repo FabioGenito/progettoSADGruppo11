@@ -6,6 +6,7 @@ package com.progettosad.mediaplayergruppo11.controller;
 
 import com.progettosad.mediaplayergruppo11.service.PlaylistGenerationService;
 import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
+import com.progettosad.mediaplayergruppo11.dao.factory.DatabaseDAOFactory;
 import com.progettosad.mediaplayergruppo11.model.FilterType;
 import com.progettosad.mediaplayergruppo11.model.Playlist;
 import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
@@ -44,7 +45,7 @@ public class ExploreController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        generationService = new PlaylistGenerationService(new TrackDAO());
+        generationService = new PlaylistGenerationService(DatabaseDAOFactory.getInstance().getTrackDAO());
 
         filterTypeCombo.getItems().setAll(FilterType.values());
         filterTypeCombo.getSelectionModel().selectFirst();

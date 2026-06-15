@@ -2,6 +2,7 @@ package com.progettosad.mediaplayergruppo11.controller;
 
 import com.progettosad.mediaplayergruppo11.dao.TagDAO;
 import com.progettosad.mediaplayergruppo11.dao.TagDAOInterface;
+import com.progettosad.mediaplayergruppo11.dao.factory.DatabaseDAOFactory;
 import com.progettosad.mediaplayergruppo11.model.Tag;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
@@ -54,7 +55,7 @@ public class FormController implements Initializable {
     private static final String STYLE_CLASS_ERROR = "text-field-error";
     
     private Track trackToEdit = null;
-    private final TagDAOInterface tagDAO = new TagDAO();
+    private final TagDAOInterface tagDAO = DatabaseDAOFactory.getInstance().getTagDAO();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) { 
