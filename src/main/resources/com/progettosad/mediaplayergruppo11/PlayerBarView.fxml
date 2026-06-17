@@ -7,6 +7,7 @@
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
@@ -20,8 +21,7 @@
             <children>
                 <HBox alignment="CENTER_LEFT" prefWidth="280.0" spacing="15.0">
                     <children>
-                        <Region fx:id="currentTrackImage" maxHeight="-Infinity" prefHeight="60.0" prefWidth="60.0" style="-fx-background-color: #2a2a2a; -fx-background-radius: 6;" />
-                        <VBox alignment="CENTER_LEFT" spacing="2.0">
+                            <StackPane fx:id="currentTrackImage" maxHeight="-Infinity" prefHeight="60.0" prefWidth="60.0" style="-fx-background-color: #2a2a2a; -fx-background-radius: 6;" />                        <VBox alignment="CENTER_LEFT" spacing="2.0">
                             <children>
                                 <Label fx:id="currentTrackTitle" text="Titolo brano" textFill="WHITE">
                                     <font><Font name="System Bold" size="14.0" /></font>
@@ -41,7 +41,7 @@
                            <cursor>
                               <Cursor fx:constant="HAND" />
                            </cursor></ToggleButton>
-                                <Button fx:id="backButton" style="-fx-background-color: transparent;" text="⏮" textFill="WHITE" />
+                        <Region />
                                 <Button fx:id="playerButton" onAction="#handlePlayPause" prefHeight="42.0" prefWidth="42.0" style="-fx-background-color: white; -fx-background-radius: 50;" text="▶" textFill="BLACK">
                                     <font><Font name="System Bold" size="20.0" /></font>
                            <cursor>

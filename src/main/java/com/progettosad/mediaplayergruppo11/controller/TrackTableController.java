@@ -4,17 +4,14 @@
  */
 package com.progettosad.mediaplayergruppo11.controller;
 
-import com.progettosad.mediaplayergruppo11.command.MoveTrackCommand;
-import com.progettosad.mediaplayergruppo11.command.UndoManager;
+import com.progettosad.mediaplayergruppo11.command.*;
 import com.progettosad.mediaplayergruppo11.dao.PlaylistDAO;
+import com.progettosad.mediaplayergruppo11.dao.PlaylistDAOInterface;
+import com.progettosad.mediaplayergruppo11.dao.factory.DatabaseDAOFactory;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
-import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
-import com.progettosad.mediaplayergruppo11.model.Playlist;
-import com.progettosad.mediaplayergruppo11.model.PlaylistManager;
-import com.progettosad.mediaplayergruppo11.model.Track;
-import com.progettosad.mediaplayergruppo11.model.TrackManager;
-import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
+import com.progettosad.mediaplayergruppo11.model.*;
+import com.progettosad.mediaplayergruppo11.observer.*;
+import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
@@ -27,7 +24,6 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +46,8 @@ public class TrackTableController implements Initializable, Observer {
     @FXML private TableColumn<Track, String> colArtista;
     @FXML private TableColumn<Track, String> colAlbum;
     @FXML private TableColumn<Track, String> colDurata;
+    @FXML private TableColumn<Track, String> colGenere;
+    @FXML private TableColumn<Track, Integer> colAnno;
 
     private Playlist currentOpenPlaylist = null; // Memorizza la playlist aperta, se c'è
     private TrackManager subject;
@@ -67,6 +65,8 @@ public class TrackTableController implements Initializable, Observer {
         colArtista.setCellValueFactory(new PropertyValueFactory<>("artist"));
         colAlbum.setCellValueFactory(new PropertyValueFactory<>("album"));
         colDurata.setCellValueFactory(new PropertyValueFactory<>("formattedLength"));
+        colGenere.setCellValueFactory(new PropertyValueFactory<>("genre"));
+        colAnno.setCellValueFactory(new PropertyValueFactory<>("publicationYear"));
         colDurata.setStyle("-fx-alignment: CENTER_RIGHT");
         trackTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         // Colonna Indice personalizzata
@@ -91,15 +91,7 @@ public class TrackTableController implements Initializable, Observer {
         // Si iscrive come Observer per le modifiche ai brani
         this.subject = TrackManager.getInstance();
         this.subject.attach(this);
-        
-        PlaybackEngine.getInstance().currentTrackProperty().addListener((observable, oldTrack, newTrack) -> {
-            Platform.runLater(() -> {
-                if (newTrack != null && trackTableView != null) {
-                    trackTableView.getSelectionModel().select(newTrack);
-                    trackTableView.scrollTo(newTrack);
-                }
-            });
-        });
+        PlaybackEngine.getInstance().attach(this);
 
         // Caricamento iniziale di tutti i brani
         loadLibraryAsync();
@@ -221,6 +213,15 @@ public class TrackTableController implements Initializable, Observer {
     private void setupTableRows() {
         trackTableView.setRowFactory(tv -> {
             TableRow<Track> row = new TableRow<>();
+            
+            row.setOnMouseEntered(event -> {
+                if (!row.isEmpty()) {
+                    row.setCursor(javafx.scene.Cursor.HAND);
+                }
+            });
+            row.setOnMouseExited(event -> {
+                row.setCursor(javafx.scene.Cursor.DEFAULT);
+            });
 
             // --- 1. GESTIONE DOPPIO CLICK ---
             row.setOnMouseClicked(event -> {
@@ -301,10 +302,7 @@ public class TrackTableController implements Initializable, Observer {
                     // C. Selezione della nuova riga e Notifica a schermo
                     Platform.runLater(() -> {
                         trackTableView.getSelectionModel().select(newIndex);
-                        
-                        if (mainShell != null){
-                            mainShell.showUndoNotification("Scaletta aggiornata!");
-                        }
+                        trackTableView.refresh();
                     });
             
                     success = true;
@@ -393,11 +391,9 @@ public class TrackTableController implements Initializable, Observer {
 
         CompletableFuture.runAsync(() -> {
             try {
-                PlaylistDAO playlistDAO = new PlaylistDAO(); // Il Receiver
-
+                PlaylistDAOInterface playlistDAO = DatabaseDAOFactory.getInstance().getPlaylistDAO();
                 // 1. Creazione del command
-                com.progettosad.mediaplayergruppo11.command.Command addTrackCmd = 
-                    new com.progettosad.mediaplayergruppo11.command.AddTrackCommand(selectedTrack.getId(), playlistId, playlistDAO);
+                Command addTrackCmd = new AddTrackCommand(selectedTrack.getId(), playlistId, playlistDAO);
 
                 // 2. Esecuzione immediata
                 addTrackCmd.execute(); 
@@ -414,8 +410,8 @@ public class TrackTableController implements Initializable, Observer {
                     
                     /* Nota Architetturale: Poiché abbiamo scavalcato il PlaylistManager, 
                        forziamo qui la notifica Observer per aggiornare l'interfaccia */
-                    if (subject instanceof com.progettosad.mediaplayergruppo11.model.TrackManager) {
-                        ((com.progettosad.mediaplayergruppo11.model.TrackManager) subject).setState("ADDED_TO_PLAYLIST_" + playlistId);
+                    if (subject instanceof TrackManager) {
+                        subject.notifyObservers(new AppEvent(AppEventType.TRACK_ADDED_TO_PLAYLIST, playlistId));             
                     }
                 });
 
@@ -434,36 +430,80 @@ public class TrackTableController implements Initializable, Observer {
     
     /**
      * T-10/02 e T-10/03
-     * Gestisce la rimozione asincrona del brano dalla playlist corrente.
+     * Gestisce la rimozione asincrona del brano dalla playlist corrente
+     * T-15/01
+     * consente di revocare l'azione di rimozione di un brano dalla playlist.
      */
-    private void handleRemoveTrackFromPlaylist() {
-        Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
-        if (selectedTrack == null || currentOpenPlaylist == null) return;
+private void handleRemoveTrackFromPlaylist() {
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                PlaylistDAO dao = new PlaylistDAO();
-                boolean success = dao.removeTrackFromPlaylist(currentOpenPlaylist.getId(), selectedTrack.getId());
+    Track selectedTrack = trackTableView.getSelectionModel().getSelectedItem();
 
-                if (success) {
-                    Platform.runLater(() -> {
-                        // T-10/03: Rimozione istantanea visiva dalla ObservableList
-                        trackTableView.getItems().remove(selectedTrack);
-                        AlertUtils.show(Alert.AlertType.INFORMATION, "Rimozione completata", "Traccia rimossa dalla playlist con successo!");
-                    });
-                    
-                    // T-10/03: Lancio evento tramite l'Observer Pattern del progetto
-                    if (subject instanceof com.progettosad.mediaplayergruppo11.model.TrackManager) {
-                        ((com.progettosad.mediaplayergruppo11.model.TrackManager) subject).setState("REMOVED_FROM_PLAYLIST_" + currentOpenPlaylist.getId());
-                    }
-                }
-            } catch (Exception ex) {
-                Platform.runLater(() -> {
-                    AlertUtils.show(Alert.AlertType.ERROR, "Errore", "Impossibile rimuovere il brano: " + ex.getMessage());
-                });
-            }
-        });
+    if (selectedTrack == null || currentOpenPlaylist == null) {
+        return;
     }
+
+    // T-15/01: Salvataggio della posizione originale per consentire il corretto Undo
+    int originalIndex =
+            trackTableView.getSelectionModel().getSelectedIndex();
+
+    CompletableFuture.runAsync(() -> {
+
+        try {
+
+            PlaylistDAOInterface dao = DatabaseDAOFactory.getInstance().getPlaylistDAO();
+
+            // T-15/01: Creazione del Command che incapsula l'operazione
+            RemoveTrackCommand cmd =
+                    new RemoveTrackCommand(
+                            selectedTrack.getId(),
+                            currentOpenPlaylist.getId(),
+                            originalIndex,
+                            dao
+                    );
+
+            // T-15/01: Salvataggio nella history dell'UndoManager
+            UndoManager.getInstance().saveCommand(cmd);
+
+            // T-15/01: Esecuzione della rimozione tramite Command Pattern
+            cmd.execute();
+
+            Platform.runLater(() -> {
+
+                // T-10/03: Rimozione istantanea visiva dalla ObservableList
+                trackTableView.getItems().remove(selectedTrack);
+
+                // T-15/02: Notifica parametrizzata con possibilità di Undo
+                if (mainShell != null) {
+                    mainShell.showUndoNotification("Traccia rimossa dalla playlist");
+                }
+             else {
+                if (mainShell != null) {
+                    mainShell.showUndoNotification("Errore di salvataggio");
+                }}
+               
+
+            });
+
+            // T-10/03: Lancio evento tramite l'Observer Pattern del progetto
+            if (subject instanceof TrackManager) {
+                subject.notifyObservers(new AppEvent(AppEventType.TRACK_REMOVED_FROM_PLAYLIST, currentOpenPlaylist.getId()));
+            }
+
+        } catch (Exception ex) {
+
+            Platform.runLater(() -> {
+
+                AlertUtils.show(
+                        Alert.AlertType.ERROR,
+                        "Errore",
+                        "Impossibile rimuovere il brano: "
+                                + ex.getMessage()
+                );
+
+            });
+        }
+    });
+}
 
     /***
      * Metodo centralizzato per aprire il form di traccia.
@@ -491,43 +531,62 @@ public class TrackTableController implements Initializable, Observer {
     
 
     // --- OBSERVER ---
-
     @Override
-    public void update() {
-        String stato = subject.getState();
-        if (stato == null) return;
-
+    public void update(AppEvent event) {
+        if (event == null) return;
+        
         Platform.runLater(() -> {
-            if (stato.startsWith(TrackManager.EVENT_TRACK_DELETED)) {
-                try {
-                    int deletedId = Integer.parseInt(stato.replaceAll("\\D+", ""));
+            switch (event.getType()) {
+                case TRACK_DELETED_FROM_DB:
+                    int deletedId = (Integer) event.getPayload();
                     trackTableView.getItems().removeIf(t -> t.getId() == deletedId);
-                } catch (Exception ignored) {}
-            } else if (stato.equals(TrackManager.EVENT_TRACK_ADDED)) {
-                if (currentOpenPlaylist == null) { 
-                    Track nuovaTraccia = subject.getLastProcessedTrack();
-                    if (nuovaTraccia != null) {
-                        trackTableView.getItems().add(nuovaTraccia);
-                        trackTableView.sort();
+                    break;
+                    
+                case TRACK_ADDED_TO_DB:
+                    if (currentOpenPlaylist == null) { 
+                        // We are in the main library view
+                        Track nuovaTraccia = (Track) event.getPayload();
+                        if (nuovaTraccia != null) {
+                            trackTableView.getItems().add(nuovaTraccia);
+                            trackTableView.sort();
+                        }
                     }
-                }
-            } else if (stato.startsWith(TrackManager.EVENT_TRACK_UPDATED)) {
-                trackTableView.refresh();
-                trackTableView.sort();
-            } else if (stato.startsWith("ADDED_TO_PLAYLIST_")) {
-                int targetPlaylistId = Integer.parseInt(stato.split("_")[3]);
-                if (currentOpenPlaylist != null && currentOpenPlaylist.getId() == targetPlaylistId) {
-                    loadPlaylistTracks(currentOpenPlaylist); 
-                }
-            }
-            else if (stato.startsWith("REMOVED_FROM_PLAYLIST_")) {
-                int targetPlaylistId = Integer.parseInt(stato.split("_")[3]);
-                // Se la playlist attualmente aperta coincide con quella da cui è stato tolto il brano
-                if (currentOpenPlaylist != null && currentOpenPlaylist.getId() == targetPlaylistId) {
-                    // Ricarica asincronamente i dati aggiornati dal database
-                    loadPlaylistTracks(currentOpenPlaylist); 
-                }
+                    break;
+                    
+                case TRACK_UPDATED:
+                    trackTableView.refresh();
+                    trackTableView.sort();
+                    break;
+                    
+                case TRACK_ADDED_TO_PLAYLIST:
+                case TRACK_REMOVED_FROM_PLAYLIST:
+                    int targetPlaylistId = (Integer) event.getPayload();
+                    if (currentOpenPlaylist != null && currentOpenPlaylist.getId() == targetPlaylistId) {
+                        loadPlaylistTracks(currentOpenPlaylist); 
+                    }
+                    break;
+                    
+                case PLAYBACK_STATE_CHANGED:
+                    Track playingTrack = (Track) event.getPayload();
+                    if (playingTrack != null && trackTableView != null) {
+                        // Cerchiamo la traccia per ID per evitare problemi di reference in memoria
+                        for (Track t : trackTableView.getItems()) {
+                            if (t.getId() == playingTrack.getId()) {
+                                trackTableView.getSelectionModel().select(t);
+                                trackTableView.scrollTo(t);
+                                break; // Trovata e selezionata, usciamo dal ciclo
+                            }
+                        }
+                    } else if (playingTrack == null && trackTableView != null) {
+                        // Opzionale: se la riproduzione si ferma del tutto, deseleziona la tabella
+                        trackTableView.getSelectionModel().clearSelection();
+                    }
+                break;
+                    
+                default:
+                    break;
             }
         });
     }
+
 }

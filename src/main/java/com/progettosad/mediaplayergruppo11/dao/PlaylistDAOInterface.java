@@ -17,7 +17,10 @@ public interface PlaylistDAOInterface {
     Playlist createPlaylist(String name, String image);
     List<Playlist> getAllPlaylists();
     boolean addTrackToPlaylist(int playlistId, int trackId);
+    boolean addTrackToPlaylist(int playlistId, int trackId, int position);
     boolean removeTrackFromPlaylist(int playlistId, int trackId);
     List<Track> getTracksByPlaylist(int playlistId);
     void updatePlaylistTrackOrder(int playlistId, List<Track> tracks);
+    boolean updateTrackPositions(int playlistId, List<Integer> trackIdsInOrder);
+    List<Playlist> getMostPlayedPlaylistsByUser(int userId, int limit);
 }

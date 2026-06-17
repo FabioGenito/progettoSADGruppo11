@@ -1,12 +1,11 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/javafx/FXMLController.java to edit this template
- */
 package com.progettosad.mediaplayergruppo11.controller;
 
+import com.progettosad.mediaplayergruppo11.dao.TagDAOInterface;
+import com.progettosad.mediaplayergruppo11.dao.factory.DatabaseDAOFactory;
+import com.progettosad.mediaplayergruppo11.model.Tag;
 import com.progettosad.mediaplayergruppo11.model.Track;
 import com.progettosad.mediaplayergruppo11.model.TrackManager;
-import com.progettosad.mediaplayergruppo11.utils.AlertUtils;
+import com.progettosad.mediaplayergruppo11.view.dialogs.AlertUtils;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -19,18 +18,18 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
-
-/**
- * FXML Controller class
- *
- * @author Fabio
- */
+import javafx.scene.control.Label;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 /**
  * Controller per la gestione del form della traccia (Inserimento e Modifica).
- * Implementa la validazione grafica real-time e delega l'operazione I/O
- * a un thread separato (Task) per preservare la reattività della UI.
+ * Refactoring completato: rimosso l'uso di stili grafici hardcoded in Java
+ * delegando interamente la formattazione visiva al file CSS esterno.
+ * * @author Fabio
  */
 public class FormController implements Initializable {
 
@@ -43,23 +42,27 @@ public class FormController implements Initializable {
     @FXML private TextField genreField;
     @FXML private TextField imageField;
     
+    @FXML private VBox tagSectionContainer;
+    @FXML private FlowPane tagsFlowPane;
+    @FXML private TextField newTagField;
+    @FXML private Button addTagButton;
+    
     @FXML private Button submitButton;
     @FXML private Button backButton;
     
+    // Costante per identificare la classe di errore CSS (DoD - No magic strings)
+    private static final String STYLE_CLASS_ERROR = "text-field-error";
+    
     private Track trackToEdit = null;
+    private final TagDAOInterface tagDAO = DatabaseDAOFactory.getInstance().getTagDAO();
 
     @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        backButton.setOnAction(event -> navigateToHome());
-        submitButton.setOnAction(event -> handleSaveTrack());
-        
+    public void initialize(URL location, ResourceBundle resources) { 
+        tagSectionContainer.setVisible(false);
+        newTagField.textProperty().addListener((obs, oldV, newV) -> resetFieldStyle(newTagField));
         setupGraphicalValidation();
     }
     
-    /**
-     * TASK T-03/02: Pre-compila i campi di testo con i valori attuali della traccia selezionata.
-     * Questo metodo viene chiamato dal LibraryController PRIMA di mostrare la scena.
-     */
     public void setTrackData(Track track) {
         this.trackToEdit = track;        
         submitButton.setText("Salva Modifiche");
@@ -77,13 +80,115 @@ public class FormController implements Initializable {
         genreField.setText(track.getGenre());
         imageField.setText(track.getImage() != null ? track.getImage() : "");
         
+        tagSectionContainer.setVisible(true);
+        loadTagsAsync();
+        
         validateFields();
     }
 
+    private void loadTagsAsync() {
+        if (trackToEdit == null) return;
+
+        Task<List<Tag>> loadTask = new Task<>() {
+            @Override
+            protected List<Tag> call() throws Exception {
+                return tagDAO.getTagsByTrackId(trackToEdit.getId());
+            }
+        };
+
+        loadTask.setOnSucceeded(e -> populateTagsFlowPane(loadTask.getValue()));
+        loadTask.setOnFailed(e -> AlertUtils.show(Alert.AlertType.ERROR, "Errore Database", "Impossibile caricare i tag del brano."));
+
+        new Thread(loadTask).start();
+    }
+
+    private void populateTagsFlowPane(List<Tag> tags) {
+        tagsFlowPane.getChildren().clear();
+        for (Tag tag : tags) {
+            tagsFlowPane.getChildren().add(createTagChip(tag));
+        }
+    }
+
     /**
-     * Sfrutta i listener sulle proprietà testuali per abilitare il pulsante 
-     * di sottomissione solo quando i vincoli di dominio obbligatori sono soddisfatti.
+     * Crea programmaticamente la Chip agganciando le classi definite nel CSS esterno.
      */
+    private HBox createTagChip(Tag tag) {
+        HBox chip = new HBox();
+        chip.getStyleClass().add("tag-chip");
+
+        Label label = new Label(tag.getName());
+        label.getStyleClass().add("tag-chip-label");
+
+        Button removeBtn = new Button("×");
+        removeBtn.getStyleClass().add("tag-chip-remove-btn");
+        removeBtn.setOnAction(e -> handleRemoveTag(tag, chip));
+
+        chip.getChildren().addAll(label, removeBtn);
+        return chip;
+    }
+
+    @FXML
+    private void handleAddTag() {
+        String tagText = newTagField.getText().trim();
+
+        if (tagText.isEmpty()) {
+            // Se non è già presente, aggiungiamo la classe d'errore CSS per fare il bordo rosso
+            if (!newTagField.getStyleClass().contains(STYLE_CLASS_ERROR)) {
+                newTagField.getStyleClass().add(STYLE_CLASS_ERROR);
+            }
+            return;
+        }
+
+        Task<Tag> addSpecTask = new Task<>() {
+            @Override
+            protected Tag call() throws Exception {
+                Tag tag = new Tag();
+                tag.setName(tagText);
+                tag.setTrackId(trackToEdit.getId());
+                return tagDAO.insertTag(tag);
+            }
+        };
+
+        addSpecTask.setOnSucceeded(e -> {
+            newTagField.clear();
+            resetFieldStyle(newTagField);
+            tagsFlowPane.getChildren().add(createTagChip(addSpecTask.getValue()));
+        });
+
+        addSpecTask.setOnFailed(e -> {
+            Throwable error = addSpecTask.getException();
+            AlertUtils.show(Alert.AlertType.ERROR, "Errore di Validazione", error.getMessage());
+        });
+
+        new Thread(addSpecTask).start();
+    }
+
+    private void handleRemoveTag(Tag tag, HBox chipNode) {
+        Task<Boolean> deleteSpecTask = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                return tagDAO.deleteTag(tag.getId());
+            }
+        };
+
+        deleteSpecTask.setOnSucceeded(e -> {
+            if (deleteSpecTask.getValue()) {
+                tagsFlowPane.getChildren().remove(chipNode);
+            }
+        });
+
+        deleteSpecTask.setOnFailed(e -> AlertUtils.show(Alert.AlertType.ERROR, "Errore", "Impossibile rimuovere il tag selezionato."));
+
+        new Thread(deleteSpecTask).start();
+    }
+
+    /**
+     * Ripristina lo stile originario rimuovendo la classe di errore CSS.
+     */
+    private void resetFieldStyle(TextField field) {
+        field.getStyleClass().remove(STYLE_CLASS_ERROR);
+    }
+
     private void setupGraphicalValidation() {
         titleField.textProperty().addListener((obs, oldV, newV) -> validateFields());
         artistField.textProperty().addListener((obs, oldV, newV) -> validateFields());
@@ -104,19 +209,12 @@ public class FormController implements Initializable {
         submitButton.setDisable(isInvalid);
     }
 
-    /**
-     * Istanzia il Task asincrono per l'inserimento/modifica 
-     * Il parsing dei dati numerici avviene all'interno del call() in modo che,
-     * in caso di NumberFormatException, l'eccezione venga catturata
-     * dal setOnFailed e non causi il crash dell'applicazione.
-     */
+    @FXML
     private void handleSaveTrack() {
         Task<Track> saveTask = new Task<Track>() {
             @Override
             protected Track call() throws Exception {
-                
                 int minutes, seconds, year;
-                        
                 try {
                     minutes = Integer.parseInt(minuteField.getText().trim());
                     seconds = Integer.parseInt(secondField.getText().trim());
@@ -137,7 +235,6 @@ public class FormController implements Initializable {
                         genreField.getText().trim(),
                         imageField.getText().trim()                            
                     );
-                    
                     return TrackManager.getInstance().insertNewTrack(newTrack);
                 } else {
                     trackToEdit.setTitle(titleField.getText().trim());
@@ -147,8 +244,6 @@ public class FormController implements Initializable {
                     trackToEdit.setPublicationYear(year);
                     trackToEdit.setGenre(genreField.getText().trim());
                     trackToEdit.setImage(imageField.getText().trim());
-                    
-                    // TASK T-03/02: Invocare updateTrack(track)
                     return TrackManager.getInstance().updateTrack(trackToEdit);
                 }
             }
@@ -174,7 +269,8 @@ public class FormController implements Initializable {
 
         new Thread(saveTask).start();
     }
-
+    
+    @FXML
     private void navigateToHome() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/progettosad/mediaplayergruppo11/MainShellView.fxml"));

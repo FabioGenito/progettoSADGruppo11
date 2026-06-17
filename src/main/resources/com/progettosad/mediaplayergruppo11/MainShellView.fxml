@@ -5,7 +5,6 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -13,7 +12,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: #121212; -fx-font-family: 'Inter', 'Segoe UI', sans-serif;" stylesheets="@HomeStyle.css" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.MainShellController">
+<AnchorPane prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: #121212; -fx-font-family: 'Inter', 'Segoe UI', sans-serif;" stylesheets="@view/styles/HomeStyle.css" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.progettosad.mediaplayergruppo11.controller.MainShellController">
     <children>
       
         <BorderPane fx:id="mainBorderPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -34,11 +33,6 @@
                                         <Insets bottom="4.0" left="12.0" right="12.0" top="4.0" />
                                     </padding>
                                 </Button>
-                                <Button mnemonicParsing="false" style="-fx-background-color: transparent; -fx-cursor: hand;" text="🧭" textFill="#a7a7a7">
-                                    <font>
-                                        <Font size="18.0" />
-                                    </font>
-                                </Button>
                                 <Button fx:id="exploreButton" mnemonicParsing="false" onAction="#openExploreView" style="-fx-background-color: transparent; -fx-cursor: hand;" text="📂" textFill="#a7a7a7">
                                     <font>
                                         <Font size="18.0" />
@@ -47,15 +41,6 @@
                             </children>
                         </HBox>
                         <Region HBox.hgrow="ALWAYS" />
-                        <HBox fx:id="searchBar" alignment="CENTER" fillHeight="false" maxHeight="-Infinity" prefHeight="38.0" spacing="10.0" style="-fx-background-color: #242424; -fx-background-radius: 50;">
-                            <padding>
-                                <Insets left="18.0" right="18.0" />
-                            </padding>
-                            <children>
-                                <Label text="🔍" textFill="#a7a7a7" />
-                                <TextField prefHeight="26.0" prefWidth="280.0" promptText="Cerca..." style="-fx-background-color: transparent; -fx-text-fill: white; -fx-prompt-text-fill: #707070; -fx-padding: 0;" />
-                            </children>
-                        </HBox>
                         <Region HBox.hgrow="ALWAYS" />
                     </children>
                 </HBox>
@@ -85,6 +70,31 @@
                   </ScrollPane>
 
                   <Region prefHeight="10.0" />
+
+                  <!-- Sezione: brani piu' ascoltati -->
+                  <VBox fx:id="mostPlayedTracksSection" managed="false" spacing="8.0" visible="false">
+                     <Label text="I tuoi brani piu' ascoltati" textFill="WHITE">
+                        <font><Font name="System Bold" size="22.0" /></font>
+                     </Label>
+                     <ScrollPane fitToHeight="true" fitToWidth="true" minHeight="200.0" style="-fx-background-color: transparent; -fx-control-inner-background: #121212; -fx-hbar-policy: NEVER; -fx-vbar-policy: NEVER;">
+                        <content>
+                           <HBox fx:id="mostPlayedTracksContainer" alignment="CENTER_LEFT" spacing="15.0" />
+                        </content>
+                     </ScrollPane>
+                  </VBox>
+
+                  <!-- Sezione: playlist piu' ascoltate -->
+                  <VBox fx:id="mostPlayedPlaylistsSection" managed="false" spacing="8.0" visible="false">
+                     <Label text="Le tue playlist piu' ascoltate" textFill="WHITE">
+                        <font><Font name="System Bold" size="22.0" /></font>
+                     </Label>
+                     <ScrollPane fitToHeight="true" fitToWidth="true" minHeight="200.0" style="-fx-background-color: transparent; -fx-control-inner-background: #121212; -fx-hbar-policy: NEVER; -fx-vbar-policy: NEVER;">
+                        <content>
+                           <HBox fx:id="mostPlayedPlaylistsContainer" alignment="CENTER_LEFT" spacing="15.0" />
+                        </content>
+                     </ScrollPane>
+                  </VBox>
+
 
                   <Label text="Tutti i brani" textFill="WHITE">
                      <font>

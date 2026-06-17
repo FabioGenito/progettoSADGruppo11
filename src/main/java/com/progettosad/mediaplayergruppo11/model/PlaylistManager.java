@@ -1,32 +1,22 @@
 package com.progettosad.mediaplayergruppo11.model;
 
 import com.progettosad.mediaplayergruppo11.dao.*;
+import com.progettosad.mediaplayergruppo11.dao.factory.*;
 import com.progettosad.mediaplayergruppo11.exception.TrackAlreadyInPlaylistException;
-import java.util.List;
-import javafx.concurrent.Task;
-import com.progettosad.mediaplayergruppo11.observer.Observer;
-import com.progettosad.mediaplayergruppo11.observer.Subject;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import com.progettosad.mediaplayergruppo11.observer.*;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.concurrent.Task;
 
 public class PlaylistManager implements Subject {
-
-    public static final String EVENT_TRACK_ADDED_TO_PLAYLIST_PREFIX = "ADDED_TO_PLAYLIST_";
-    public static final String EVENT_TRACK_REMOVED_FROM_PLAYLIST_PREFIX = "REMOVED_FROM_PLAYLIST_";
-    public static final String EVENT_PLAYLIST_CREATED = "CREATED_PLAYLIST";
-
     private static PlaylistManager instance;
-    private String state;
     private PlaylistDAOInterface dao;
-    private List<Observer> observers = new ArrayList<>();
+    private final List<Observer> observers = new ArrayList<>();
     private Playlist lastCreatedPlaylist;
 
     private PlaylistManager() {
-        this.dao = new PlaylistDAO();
+        DAOFactory factory = DatabaseDAOFactory.getInstance();
+        this.dao = factory.getPlaylistDAO();   
     }
 
     public void setDao(PlaylistDAOInterface dao) {
@@ -52,9 +42,8 @@ public class PlaylistManager implements Subject {
             boolean isAdded = dao.addTrackToPlaylist(playlistId, trackId);
 
             if (isAdded) {
-                this.state = EVENT_TRACK_ADDED_TO_PLAYLIST_PREFIX + playlistId;
                 System.out.println("PlaylistManager: Traccia " + trackId + " aggiunta alla playlist " + playlistId + ". Emetto notifica...");
-                notifyObservers();
+                notifyObservers(new AppEvent(AppEventType.TRACK_ADDED_TO_PLAYLIST, playlistId));
             }
 
         } catch (TrackAlreadyInPlaylistException e) {
@@ -81,9 +70,8 @@ public class PlaylistManager implements Subject {
         removeTask.setOnSucceeded(event -> {
             boolean isRemoved = removeTask.getValue();
             if (isRemoved) {
-                this.state = EVENT_TRACK_REMOVED_FROM_PLAYLIST_PREFIX + playlistId;
                 System.out.println("PlaylistManager [Async]: Traccia " + trackId + " rimossa dalla playlist " + playlistId + ". Emetto notifica...");
-                notifyObservers();
+                notifyObservers(new AppEvent(AppEventType.TRACK_REMOVED_FROM_PLAYLIST, playlistId));
             } else {
                 System.err.println("PlaylistManager [Async]: Nessuna associazione trovata da rimuovere.");
             }
@@ -145,14 +133,10 @@ public class PlaylistManager implements Subject {
     }
 
     @Override
-    public void notifyObservers() {
+    public void notifyObservers(AppEvent event) {
         for (Observer o : observers) {
-            o.update();
+            o.update(event);
         }
-    }
-
-    public String getState() {
-        return state;
     }
     
     public Playlist getLastCreatedPlaylist() {
@@ -165,8 +149,7 @@ public class PlaylistManager implements Subject {
             
             System.out.println("PlaylistManager: Playlist '" + name + "' creata con successo (ID: " + newPlaylist.getId() + ").");
             this.lastCreatedPlaylist = newPlaylist;
-            this.state = EVENT_PLAYLIST_CREATED;
-            notifyObservers();
+            notifyObservers(new AppEvent(AppEventType.PLAYLIST_CREATED, newPlaylist.getId()));
             
             return newPlaylist;
 

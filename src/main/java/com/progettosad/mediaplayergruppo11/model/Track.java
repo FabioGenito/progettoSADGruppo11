@@ -21,7 +21,7 @@ public class Track {
 
     public Track() {}
 
-    public Track(String title, String artist, int length,String album, int publicationYear,String genre,String image) {
+    public Track(String title, String artist, int length, String album, int publicationYear,String genre,String image) {
         this.title = title;
         this.artist = artist;
         this.length=length;
@@ -56,6 +56,9 @@ public class Track {
     public void setImage(String image) { this.image = image; }
     
     public String getFormattedLength() {
-        return com.progettosad.mediaplayergruppo11.utils.TimeUtils.formatSecondsToMinutes(this.length);
+        if (length < 0) return "00:00";
+        int minuti = length / 60;
+        int secondi = length % 60;
+        return String.format("%02d:%02d", minuti, secondi);
     }
 }

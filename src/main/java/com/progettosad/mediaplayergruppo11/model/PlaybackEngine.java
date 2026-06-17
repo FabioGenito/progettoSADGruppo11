@@ -8,21 +8,14 @@ import com.progettosad.mediaplayergruppo11.model.states.PlayerState;
 import com.progettosad.mediaplayergruppo11.model.states.StoppedState;
 import com.progettosad.mediaplayergruppo11.model.strategy.PlaybackStrategy;
 import com.progettosad.mediaplayergruppo11.model.strategy.SequentialStrategy;
+import com.progettosad.mediaplayergruppo11.observer.*;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.util.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 
 /**
  *
@@ -32,97 +25,95 @@ import javafx.beans.property.SimpleIntegerProperty;
  */
 
 
-public class PlaybackEngine {
+public class PlaybackEngine implements Subject {
+    
     private static PlaybackEngine instance;
     private ConcretePlaylistIterator playlistIterator;
     private PlayerState currentState;
     private Track currentTrack;
-    private Timeline timeline;
-    private int totalTime=0;
-    private PlaybackStrategy currentStrategy=new SequentialStrategy();
+    private PlaybackStrategy currentStrategy = new SequentialStrategy();
 
+    private final List<Observer> observers = new ArrayList<>();
+
+    private volatile int totalTime = 0;
+    private volatile int currentTime = 0;
+    private volatile boolean isPlaying = false;
+    private volatile double progress = 0.0;
     
-    // TASK T-06/03: Proprietà esposte per il Binding con l'interfaccia
-    private final DoubleProperty progressProperty = new SimpleDoubleProperty(0.0);
-    private final ObjectProperty<Track> currentTrackProperty = new SimpleObjectProperty<>(null);
-    private final BooleanProperty isPlayingProperty = new SimpleBooleanProperty(false);
-    private final IntegerProperty currentTimeProperty = new SimpleIntegerProperty(0);
-    
-    public IntegerProperty currentTimeProperty() { return currentTimeProperty; }
-    public DoubleProperty progressProperty() { return progressProperty; }
-    public ObjectProperty<Track> currentTrackProperty() { return currentTrackProperty; }
-    public BooleanProperty isPlayingProperty() { return isPlayingProperty; }
-    
+    private ScheduledExecutorService timer;
+       
     //costruttore privato per inizializzare la Timeline
     //configurandola per aggiornare il tempo logico ogni secondo
     private PlaybackEngine(){
         this.currentState=new StoppedState();
-       
-        timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
-            int current = currentTimeProperty.get() + 1;
-            currentTimeProperty.set(current);        
-            // TASK T-06/03: Aggiorna la proprietà in tempo reale (da 0.0 a 1.0 per la ProgressBar)
-            if (totalTime > 0) {
-                progressProperty.set((double) current / totalTime);
-            }
-            
-           
-        }));
-        //T11/03:AutoNext
-        timeline.setOnFinished(event -> {
-            System.out.println("PlaybackEngine: Brano terimato: Auto Next!");
-            javafx.application.Platform.runLater(()->{
-                nextTrack();
-            });
-        });
     }
     
     public static synchronized PlaybackEngine getInstance(){
-        if(instance==null){
+        if(instance == null){
             instance = new PlaybackEngine();
         }
         return instance;
     }
     
+    private void startTimer() {
+        stopTimer();
+        timer = Executors.newSingleThreadScheduledExecutor();
+        
+        timer.scheduleAtFixedRate(() -> {
+            currentTime++;
+            if (totalTime > 0) {
+                progress = (double) currentTime / totalTime;
+            }
+            
+            // 1. Notifica l'avanzamento alla View
+            notifyObservers(new AppEvent(AppEventType.PLAYBACK_TIME_TICK, currentTime));
+            
+            // 2. Controllo brano terminato (Auto-Next)
+            if (currentTime >= totalTime) {
+                stopTimer();
+                System.out.println("PlaybackEngine: Brano terminato: Auto Next!");
+                // Usa un thread separato per non bloccare lo scheduler
+                CompletableFuture.runAsync(this::nextTrack); 
+            }
+        }, 1, 1, TimeUnit.SECONDS); 
+    }
+    
+    private void stopTimer() {
+        if (timer != null && !timer.isShutdown()) {
+            timer.shutdownNow();
+        }
+    }
+    
     //Avvia la riproduzione di una traccia. Gestisce la logica di ripresa della pausa
     //o di caricamento di un nuovo brano
     public void playTrack(Track track){
-        if (track==null)
-            return;
+        if (track==null) return;
         
         //verifica se si richiede di riprendere il prano precedentemente messo in pausa
-        if (currentTrack != null && currentTrack.getId() == track.getId()){
-            if (currentTimeProperty.get() < totalTime - 1) {
-                currentState.play(this);
-                isPlayingProperty.set(true);
-                return;
-            }
+        if (currentTrack != null && currentTrack.getId() == track.getId() && currentTime > 0 && currentTime < totalTime - 1) {
+            currentState.play(this);
+            this.isPlaying = true;
+            startTimer(); 
+            notifyObservers(new AppEvent(AppEventType.PLAYBACK_STATE_CHANGED, currentTrack));
+            return;
         }
         
-        //se si cambia il brano l'esecuzione precedente viene interrotta
-        if(currentTrack != null){
-            stopTrack();
-            timeline.stop();
+        stopTimer();
+        if (currentState != null) {
+            currentState.stop(this);
         }
-        this.currentTrack=track;
-        this.totalTime=track.getLength();
         
-        // TASK T-06/03: Reset della barra e aggiornamento metadati
-        this.currentTimeProperty.set(0);
-        this.progressProperty.set(0.0); 
-        this.currentTrackProperty.set(track);
+        this.currentTrack = track;
+        this.totalTime = track.getLength();
+        this.currentTime = 0;
+        this.progress = 0.0;
+        this.isPlaying = true;
 
-        //T-11/03
-        //Imposta il limite della Timeline. Essendo un KeyFrame di 1 secondo, 
-         // il numero di cicli corrisponde esattamente ai secondi totali del brano.
-        timeline.setCycleCount(this.totalTime > 0 ? this.totalTime : 1);
-
-        timeline.playFromStart(); 
-
-        // Aggiorna lo State Pattern
         currentState.play(this);
-        isPlayingProperty.set(true);
-            
+        startTimer(); 
+        
+        notifyObservers(new AppEvent(AppEventType.PLAYBACK_STATE_CHANGED, track));
+
         //T-08/02
         CompletableFuture.runAsync(() -> {
             try {
@@ -136,20 +127,27 @@ public class PlaybackEngine {
     }
     
     public void pauseTrack(){
+        stopTimer();
+        this.isPlaying = false;
         currentState.pause(this);
-        isPlayingProperty.set(false);
+        notifyObservers(new AppEvent(AppEventType.PLAYBACK_STATE_CHANGED, currentTrack));    
     }
     
     public void stopTrack(){
+        stopTimer();
+        this.isPlaying = false;
+        this.currentTime = 0;
+        this.progress = 0.0;
         currentState.stop(this);
-        isPlayingProperty.set(false);
-        progressProperty.set(0.0);
-        currentTimeProperty.set(0);
+        notifyObservers(new AppEvent(AppEventType.PLAYBACK_STATE_CHANGED, null));
     }
     
     
     /*
     * T-08/01: Metodo per determinare l'azione successiva usando l'iteratore
+    *T-21/01: Modifica della logica di avanzamento automatico.
+    *Calcola la traccia successiva leggendo la coda in tempo reale senza indici 
+    *statici.
     */
     
     public void nextTrack(){
@@ -158,14 +156,55 @@ public class PlaybackEngine {
             currentState.stop(this);
         }
         
-        //Verifica se l'iteratore ha un brano successivo
-        if(playlistIterator != null && playlistIterator.hasNext()){
-            Track newTrack=playlistIterator.next();
+        //Verifica le precondizioni: se manca la coda o il brano corrente restituisce
+        //un flag di errore
+        if(playlistIterator != null && playlistIterator.getQueue()== null || currentTrack == null){
+            stopTrack();
+            return;
+            }
+        List<Track> currentQueue = playlistIterator.getQueue();
+        
+        //Ricerca della posizione esatta del brano corrente
+        //effettuata confrontando l'ID univoco del brano per intercettare lo spostamento
+        //a runtime
+        int currentTrackIndex = -1;
+        for(int i =0; i<currentQueue.size(); i++){
+            if(currentQueue.get(i).getId()==currentTrack.getId()){
+                currentTrackIndex=i;
+                break;
+            }
+        }
+        
+        //Fallback di sizurezza. Se il codice non è più presente nella coda,
+        // si preserva l'ultimo indice noto memorizzato
+        if(currentTrackIndex==-1){
+            currentTrackIndex=playlistIterator.getCurrentIndex();
+        }
+        
+        //Sicronizzazione dell'iteratore con la posizione post-riordinamento
+        playlistIterator.setCurrentIndex(currentTrackIndex);
+        Track nextTrack=null;
+        
+        //comportamento coerente con la stategia attiva
+        if(currentStrategy != null){
+            nextTrack=currentStrategy.getNextTrack(currentQueue, currentTrackIndex);
+        }
+        
+        if(nextTrack == null && (currentTrackIndex +1) < currentQueue.size()){
+            nextTrack=currentQueue.get(currentTrackIndex + 1);
+        }
+        
+        if(nextTrack!= null){
+            int nextTrackIndex=currentQueue.indexOf(nextTrack);
+            if(nextTrackIndex != -1){
+                playlistIterator.setCurrentIndex(nextTrackIndex);
+            }
 
             //T-08/02: il riutilizzo di playTrack garantisce che la logica asincrona
             //del DB venga ereditata automaticamente
-//T - 08/01: Backend – Logica Next e Coda di Riproduzione)
-            playTrack(newTrack);
+            //T - 08/01: Backend – Logica Next e Coda di Riproduzione)
+            this.currentTime = 0;
+            playTrack(nextTrack);
         }else{
             //Nessun brano successivo: stoppa la ripdouzione
             stopTrack();
@@ -180,8 +219,20 @@ public class PlaybackEngine {
         this.currentState=state;
     }
     
-    public Timeline getTimeLine(){
-        return timeline;
+    public double getProgress() {
+        return progress; 
+    }
+    
+    public int getCurrentTime() { 
+        return currentTime; 
+    }
+    
+    public Track getCurrentTrack() { 
+        return currentTrack; 
+    }
+    
+    public boolean isPlaying() { 
+        return isPlaying; 
     }
     
     //T-11/01
@@ -191,13 +242,11 @@ public class PlaybackEngine {
         }
     }
     
-    public void setCurrentTime(int t){
-        this.currentTimeProperty.set(t);
-    }
     public PlaybackStrategy getPlaybackStrategy() {
         return this.currentStrategy;
     }
-        //T - 19/01: Backend – Riorganizzazione della Coda nel PlaybackEngine
+        
+    //T - 19/01: Backend – Riorganizzazione della Coda nel PlaybackEngine
     /**
      * Sposta una traccia all'interno della coda e ricalcola matematicamente
      * l'indice del brano in riproduzione per non interrompere il flusso.
@@ -258,5 +307,22 @@ public class PlaybackEngine {
         List<Track> independentQueue = new ArrayList<>(currentPlaylist);
         this.playlistIterator = new ConcretePlaylistIterator(independentQueue, startIndex);
         playTrack(trackToPlay);
-}
+    }
+    
+    @Override
+    public void attach(Observer o) {
+        if (!observers.contains(o)) observers.add(o);
+    }
+
+    @Override
+    public void detach(Observer o) {
+        observers.remove(o);
+    }
+
+    @Override
+    public void notifyObservers(AppEvent event) {
+        for (Observer o : observers) {
+            o.update(event);
+        }
+    }
 }

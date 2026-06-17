@@ -21,7 +21,8 @@ import java.util.List;
  */
 
 public class TrackDAO implements TrackDAOInterface {
-
+private static final String GET_MOST_PLAYED_TRACKS_BY_USER =
+    "SELECT * FROM tracks ORDER BY play_count DESC LIMIT ?";
     private static final String INSERT_TRACK = "INSERT INTO tracks (title, artist, length, album, publication_year, genre, image) VALUES (?,?,?,?,?,?,?)";
     private static final String DELETE_TRACK = "DELETE FROM tracks WHERE id = ?";
     private static final String INCREMENT_PLAY_COUNT = "UPDATE tracks SET play_count = play_count + 1 WHERE id = ?";
@@ -35,6 +36,20 @@ public class TrackDAO implements TrackDAOInterface {
     private static final String QRY_FREQ_DECADES = "SELECT ((publication_year / 10) * 10) AS decade, COUNT(id) FROM tracks GROUP BY 1 ORDER BY 2 DESC LIMIT ?";
     private static final String SELECT_RANDOM_BY_GENRE = "SELECT * FROM tracks WHERE genre = ? ORDER BY RANDOM() LIMIT ?";
     private static final String SELECT_RANDOM_BY_DECADE = "SELECT * FROM tracks WHERE ((publication_year / 10) * 10) = ? ORDER BY RANDOM() LIMIT ?";
+    
+    // Metodo helper unico di estrazione e mapping dei dati dal DB all'oggetto di business
+    private Track mapRowToTrack(ResultSet rs) throws SQLException {
+        Track track = new Track();
+        track.setId(rs.getInt("id"));
+        track.setTitle(rs.getString("title"));
+        track.setArtist(rs.getString("artist"));
+        track.setLength(rs.getInt("length"));
+        track.setAlbum(rs.getString("album"));
+        track.setPublicationYear(rs.getInt("publication_year"));
+        track.setGenre(rs.getString("genre"));
+        track.setImage(rs.getString("image"));
+        return track;
+    }
     
     @Override
     public List<String> getTopFavoriteGenres(int limit) {
@@ -94,16 +109,7 @@ public class TrackDAO implements TrackDAOInterface {
             
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Track track = new Track();
-                    track.setId(rs.getInt("id"));
-                    track.setTitle(rs.getString("title"));
-                    track.setArtist(rs.getString("artist"));
-                    track.setLength(rs.getInt("length"));
-                    track.setAlbum(rs.getString("album"));
-                    track.setPublicationYear(rs.getInt("publication_year"));
-                    track.setGenre(rs.getString("genre"));
-                    track.setImage(rs.getString("image"));
-                    trackList.add(track);
+                    trackList.add(mapRowToTrack(rs));
                 }
             }
         } catch (SQLException e) {
@@ -165,12 +171,10 @@ public class TrackDAO implements TrackDAOInterface {
                     }
                 }
             }
-
         } catch (SQLException e) {
             System.err.println("Errore SQL durante l'inserimento della traccia: " + e.getMessage());
             throw new RuntimeException("Errore di persistenza durante l'inserimento del Track", e);
         }
-
         return track;
     }
 
@@ -190,16 +194,13 @@ public class TrackDAO implements TrackDAOInterface {
 
             try (PreparedStatement pstmt = conn.prepareStatement(DELETE_TRACK)) {
                 pstmt.setInt(1, trackId);
-                int affectedRows = pstmt.executeUpdate();
-
-                if (affectedRows > 0) {
+                if (pstmt.executeUpdate() > 0) {
                     conn.commit();
                     success = true;
                 } else {
                     conn.rollback();
                     System.out.println("Nessuna traccia trovata con ID: " + trackId);
                 }
-
             } catch (SQLException e) {
                 conn.rollback();
                 throw new RuntimeException("Errore SQL durante l'eliminazione. Transazione annullata tramite rollback.", e);
@@ -215,6 +216,7 @@ public class TrackDAO implements TrackDAOInterface {
     }
     
     //incremento del contatore delle riproduzione di un brano 
+    @Override
     public void incrementPlayCount(int trackId){
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(INCREMENT_PLAY_COUNT)) {
@@ -255,8 +257,7 @@ public class TrackDAO implements TrackDAOInterface {
             pstmt.setString(7, track.getImage());
             pstmt.setInt(8, track.getId());
 
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows == 1;
+            return pstmt.executeUpdate() == 1;
 
         } catch (SQLException e) {
             throw new RuntimeException("Errore SQL durante l'aggiornamento della traccia con ID " + track.getId(), e);
@@ -278,23 +279,11 @@ public class TrackDAO implements TrackDAOInterface {
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
-                Track track = new Track();
-                track.setId(rs.getInt("id"));
-                track.setTitle(rs.getString("title"));
-                track.setArtist(rs.getString("artist"));
-                track.setLength(rs.getInt("length"));
-                track.setAlbum(rs.getString("album"));
-                track.setPublicationYear(rs.getInt("publication_year"));
-                track.setGenre(rs.getString("genre"));
-                track.setImage(rs.getString("image"));
-
-                trackList.add(track);
+                trackList.add(mapRowToTrack(rs));
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("Errore SQL durante il recupero della lista delle tracce.", e);
         }
-
         return trackList;
     }
     
@@ -312,16 +301,7 @@ public class TrackDAO implements TrackDAOInterface {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Track track = new Track();
-                    track.setId(rs.getInt("id"));
-                    track.setTitle(rs.getString("title"));
-                    track.setArtist(rs.getString("artist"));
-                    track.setLength(rs.getInt("length"));
-                    track.setAlbum(rs.getString("album"));
-                    track.setPublicationYear(rs.getInt("publication_year"));
-                    track.setGenre(rs.getString("genre"));
-                    track.setImage(rs.getString("image"));
-                    trackList.add(track);
+                    trackList.add(mapRowToTrack(rs));
                 }
             }
         } catch (SQLException e) {
@@ -329,5 +309,24 @@ public class TrackDAO implements TrackDAOInterface {
         }
         return trackList;
     }
-    
+        @Override
+    public List<Track> getMostPlayedTracksByUser(int userId, int limit) {
+        List<Track> result = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(GET_MOST_PLAYED_TRACKS_BY_USER)) {
+ 
+            pstmt.setInt(1, limit);
+ 
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRowToTrack(rs));   // riusa il metodo helper già esistente
+                }
+            }
+        } catch (SQLException e) {
+            // Non propaghiamo: restituiamo lista vuota (gestione "nuovo utente")
+            System.err.println("TrackDAO.getMostPlayedTracksByUser – errore SQL: " + e.getMessage());
+        }
+        return result;
+    }
+
 }
