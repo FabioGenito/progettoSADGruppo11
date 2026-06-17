@@ -5,7 +5,6 @@
 package com.progettosad.mediaplayergruppo11.controller;
 
 import com.progettosad.mediaplayergruppo11.service.PlaylistGenerationService;
-import com.progettosad.mediaplayergruppo11.dao.TrackDAO;
 import com.progettosad.mediaplayergruppo11.dao.factory.DatabaseDAOFactory;
 import com.progettosad.mediaplayergruppo11.model.FilterType;
 import com.progettosad.mediaplayergruppo11.model.Playlist;

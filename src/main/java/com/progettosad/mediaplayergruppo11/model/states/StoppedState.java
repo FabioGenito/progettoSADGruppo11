@@ -4,8 +4,6 @@
  */
 package com.progettosad.mediaplayergruppo11.model.states;
 
-import com.progettosad.mediaplayergruppo11.model.states.PlayerState;
-import com.progettosad.mediaplayergruppo11.model.states.PlayingState;
 import com.progettosad.mediaplayergruppo11.model.PlaybackEngine;
 
 /**Stato in cui il lettore è completamente fermo. 

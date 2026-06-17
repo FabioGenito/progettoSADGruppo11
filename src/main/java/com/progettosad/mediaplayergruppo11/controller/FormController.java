@@ -1,6 +1,5 @@
 package com.progettosad.mediaplayergruppo11.controller;
 
-import com.progettosad.mediaplayergruppo11.dao.TagDAO;
 import com.progettosad.mediaplayergruppo11.dao.TagDAOInterface;
 import com.progettosad.mediaplayergruppo11.dao.factory.DatabaseDAOFactory;
 import com.progettosad.mediaplayergruppo11.model.Tag;
